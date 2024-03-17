@@ -1,3 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@font-face {
+    font-family: Satoshi;
+    src: url(../font/Satoshi-Bold.otf);
+  }
+
+.logo_label{
+    h4{
+        font-family: Satoshi;
+    }
+}
