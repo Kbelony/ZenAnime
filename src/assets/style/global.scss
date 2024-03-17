@@ -2,11 +2,9 @@
 @tailwind components;
 @tailwind utilities;
  
-html{
-  background-color: black;
-}
+
 *{
-  @apply transition-colors duration-500
+  @apply transition-colors duration-150
 }
 @layer base {
   :root {
