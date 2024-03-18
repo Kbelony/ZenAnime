@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
-
+import { Link } from "@tanstack/react-router";
 
 const carouselList = () => {
   interface Anime {
@@ -14,6 +14,7 @@ const carouselList = () => {
     status: string;
     genres: string;
     meanScore: number;
+    id: number;
   }
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const [animeListTrending, setAnimeListTrending] = useState<Anime[]>([]);
@@ -39,12 +40,15 @@ const carouselList = () => {
           status: string;
           genres: string[];
           meanScore: number;
+          id: number;
+          animeId: number;
         }) => ({
           coverImage: anime.coverImage.extraLarge,
           title: anime.title.english,
           status: anime.status,
           genres: anime.genres.join(", "),
           meanScore: anime.meanScore,
+          id: anime.id,
         })
       );
       const popularData = data_popular.results.map(
@@ -54,12 +58,15 @@ const carouselList = () => {
           status: string;
           genres: string[];
           meanScore: number;
+          id: number;
+          animeId: number;
         }) => ({
           coverImage: anime.coverImage.extraLarge,
           title: anime.title.english,
           status: anime.status,
           genres: anime.genres.join(", "),
           meanScore: anime.meanScore,
+          id: anime.id,
         })
       );
       setAnimeListTrending(trendingData);
@@ -128,7 +135,7 @@ const carouselList = () => {
                 WebkitLineClamp: 1,
                 WebkitBoxOrient: "vertical",
                 overflow: "hidden",
-              }}
+              }} // Assurez-vous que `anime.id` est correctement défini dans vos données
             >
               {anime.title}
             </h2>
