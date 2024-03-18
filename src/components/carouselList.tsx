@@ -40,7 +40,7 @@ const carouselList = () => {
           status: string;
           genres: string[];
           meanScore: number;
-          id: number;
+          id: string;
           animeId: number;
         }) => ({
           coverImage: anime.coverImage.extraLarge,
@@ -58,7 +58,7 @@ const carouselList = () => {
           status: string;
           genres: string[];
           meanScore: number;
-          id: number;
+          id: string;
           animeId: number;
         }) => ({
           coverImage: anime.coverImage.extraLarge,
@@ -122,23 +122,28 @@ const carouselList = () => {
         </p>
         {animeListPopular.slice(0, 12).map((anime, index) => (
           <SwiperSlide key={index}>
-            <img
-              className=" max-h-52 md:min-h-60 md:max-h-80"
-              src={anime.coverImage}
-              alt={anime.title}
-            />
-            <h2
-              className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
-              style={{
-                whiteSpace: "pre-wrap",
-                display: "-webkit-box",
-                WebkitLineClamp: 1,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }} // Assurez-vous que `anime.id` est correctement défini dans vos données
-            >
-              {anime.title}
-            </h2>
+            <Link to="/anime/$id" params={{ id: anime.id }}>
+              <img
+                className=" max-h-52 md:min-h-60 md:max-h-80"
+                src={anime.coverImage}
+                alt={anime.title}
+              />
+            </Link>
+            <Link to="/anime/$id" params={{ id: anime.id }}>
+              <h2
+                className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                style={{
+                  whiteSpace: "pre-wrap",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 1,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }} // Assurez-vous que `anime.id` est correctement défini dans vos données
+              >
+                {anime.title}
+              </h2>
+            </Link>
+
             {/* <p>Status: {anime.status}</p> */}
             {anime.genres
               .split(",")
@@ -169,23 +174,27 @@ const carouselList = () => {
         </p>
         {animeListTrending.slice(0, 12).map((anime, index) => (
           <SwiperSlide key={index}>
-            <img
-              className=" max-h-52 md:min-h-60 md:max-h-80"
-              src={anime.coverImage}
-              alt={anime.title}
-            />
-            <h2
-              className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
-              style={{
-                whiteSpace: "pre-wrap",
-                display: "-webkit-box",
-                WebkitLineClamp: 1,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
-              {anime.title}
-            </h2>
+            <Link to="/anime/$id" params={{ id: anime.id }}>
+              <img
+                className=" max-h-52 md:min-h-60 md:max-h-80"
+                src={anime.coverImage}
+                alt={anime.title}
+              />
+            </Link>
+            <Link to="/anime/$id" params={{ id: anime.id }}>
+              <h2
+                className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                style={{
+                  whiteSpace: "pre-wrap",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 1,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }} // Assurez-vous que `anime.id` est correctement défini dans vos données
+              >
+                {anime.title}
+              </h2>
+            </Link>
             {/* <p>Status: {anime.status}</p> */}
             {anime.genres
               .split(",")
@@ -206,23 +215,27 @@ const carouselList = () => {
       <Swiper {...settings} modules={[Navigation]} className="swiper-container">
         {animeListTrending.slice(12, 24).map((anime, index) => (
           <SwiperSlide key={index}>
-            <img
-              className=" max-h-52 md:min-h-60 md:max-h-80"
-              src={anime.coverImage}
-              alt={anime.title}
-            />
-            <h2
-              className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
-              style={{
-                whiteSpace: "pre-wrap",
-                display: "-webkit-box",
-                WebkitLineClamp: 1,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
-              {anime.title}
-            </h2>
+            <Link to="/anime/$id" params={{ id: anime.id }}>
+              <img
+                className=" max-h-52 md:min-h-60 md:max-h-80"
+                src={anime.coverImage}
+                alt={anime.title}
+              />
+            </Link>
+            <Link to="/anime/$id" params={{ id: anime.id }}>
+              <h2
+                className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                style={{
+                  whiteSpace: "pre-wrap",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 1,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }} // Assurez-vous que `anime.id` est correctement défini dans vos données
+              >
+                {anime.title}
+              </h2>
+            </Link>
             {/* <p>Status: {anime.status}</p> */}
             {anime.genres
               .split(",")
@@ -250,23 +263,27 @@ const carouselList = () => {
       <Swiper {...settings} modules={[Navigation]} className="swiper-container">
         {animeListPopular.slice(13, 24).map((anime, index) => (
           <SwiperSlide key={index}>
-            <img
-              className=" max-h-52 md:min-h-60 md:max-h-80"
-              src={anime.coverImage}
-              alt={anime.title}
-            />
-            <h2
-              className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
-              style={{
-                whiteSpace: "pre-wrap",
-                display: "-webkit-box",
-                WebkitLineClamp: 1,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
-              {anime.title}
-            </h2>
+            <Link to="/anime/$id" params={{ id: anime.id }}>
+              <img
+                className=" max-h-52 md:min-h-60 md:max-h-80"
+                src={anime.coverImage}
+                alt={anime.title}
+              />
+            </Link>
+            <Link to="/anime/$id" params={{ id: anime.id }}>
+              <h2
+                className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                style={{
+                  whiteSpace: "pre-wrap",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 1,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }} // Assurez-vous que `anime.id` est correctement défini dans vos données
+              >
+                {anime.title}
+              </h2>
+            </Link>
             {/* <p>Status: {anime.status}</p> */}
             {anime.genres
               .split(",")

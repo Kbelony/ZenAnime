@@ -15,6 +15,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRoute } from './routes/__root'
 import { Route as InfoImport } from './routes/info'
 import { Route as IndexImport } from './routes/index'
+import { Route as AnimeIdImport } from './routes/anime.$id'
 
 // Create Virtual Routes
 
@@ -37,6 +38,11 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const AnimeIdRoute = AnimeIdImport.update({
+  path: '/anime/$id',
+  getParentRoute: () => rootRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -53,6 +59,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutLazyImport
       parentRoute: typeof rootRoute
     }
+    '/anime/$id': {
+      preLoaderRoute: typeof AnimeIdImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -62,6 +72,7 @@ export const routeTree = rootRoute.addChildren([
   IndexRoute,
   InfoRoute,
   AboutLazyRoute,
+  AnimeIdRoute,
 ])
 
 /* prettier-ignore-end */
