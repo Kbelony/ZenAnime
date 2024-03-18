@@ -2,7 +2,11 @@ import React, { useEffect, useState } from "react";
 
 const headerInfo = () => {
   interface Anime {
-    coverImage: string;
+    coverImage: {
+      large: string;
+      medium: string;
+      color: string;
+    };
     title: string;
     status: string;
     genres: string;
@@ -26,6 +30,13 @@ const headerInfo = () => {
   }, []);
   return (
     <div>
+      <div className="big_img">
+        <img
+          className="blur-sm h-96 object-cover"
+          src={animeInfo.bannerImage}
+          alt=""
+        />
+      </div>
       <p>{animeInfo.status}</p>
     </div>
   );
