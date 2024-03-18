@@ -6,6 +6,7 @@ import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 
+
 const carouselList = () => {
   interface Anime {
     coverImage: string;
@@ -73,6 +74,14 @@ const carouselList = () => {
     loop: false,
     navigation: true,
     breakpoints: {
+      1200: {
+        slidesPerView: 6,
+        spaceBetween: 25,
+      },
+      1000: {
+        slidesPerView: 5,
+        spaceBetween: 25,
+      },
       800: {
         slidesPerView: 4,
         spaceBetween: 25,
