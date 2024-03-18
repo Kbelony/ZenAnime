@@ -1,4 +1,8 @@
 import { useEffect, useState } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css/navigation";
+import { Navigation } from "swiper/modules";
+import "swiper/css";
 
 const carouselList = () => {
   interface Anime {
@@ -18,6 +22,7 @@ const carouselList = () => {
         "https://api-amvstrm.nyt92.eu.org/api/v2/trending?limit=30"
       );
       const data = await response.json();
+      console.log(data);
       const extractedData = data.results
         .slice(0, 12)
         .map(
@@ -40,21 +45,37 @@ const carouselList = () => {
 
     fetchData();
   }, []);
+  const settings = {
+    centeredSlides: false,
+    spaceBetween: 30,
+    loop: false,
+    navigation: true,
+    breakpoints: {
+      800: {
+        slidesPerView: 4,
+      },
+      600: {
+        slidesPerView: 3,
+      },
+      299: {
+        slidesPerView: 2,
+        spaceBetween: 20,
+      },
+    },
+  };
   return (
     <div className="carousel_list px-8 mt-12 md:px-20 md:mt-20">
-      <ul>
+      <Swiper {...settings} modules={[Navigation]} className="swiper-container">
         {animeList.map((anime, index) => (
-          <li key={index}>
+          <SwiperSlide key={index}>
             <img src={anime.coverImage} alt={anime.title} />
-            <div>
-              <h2>{anime.title}</h2>
-              <p>Status: {anime.status}</p>
-              <p>Genres: {anime.genres}</p>
-              <p>Mean Score: {anime.meanScore}</p>
-            </div>
-          </li>
+            <h2>{anime.title}</h2>
+            <p>Status: {anime.status}</p>
+            <p>Genres: {anime.genres}</p>
+            <p>Mean Score: {anime.meanScore}</p>
+          </SwiperSlide>
         ))}
-      </ul>
+      </Swiper>
     </div>
   );
 };
