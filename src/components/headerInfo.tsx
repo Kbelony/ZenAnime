@@ -16,6 +16,8 @@ const headerInfo = () => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const [animeInfo, setAnimeInfo] = useState<Anime[]>([]);
   // eslint-disable-next-line react-hooks/rules-of-hooks
+  const [ImageLargeInfo, setImageLargeInfo] = useState();
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     const fetchData = async () => {
       const response = await fetch(
@@ -24,6 +26,7 @@ const headerInfo = () => {
       const data = await response.json();
       console.log(data);
       setAnimeInfo(data);
+      setImageLargeInfo(data.coverImage.large);
     };
 
     fetchData();
@@ -32,10 +35,13 @@ const headerInfo = () => {
     <div>
       <div className="big_img">
         <img
-          className="blur-sm h-96 object-cover"
+          className=" object-cover blur_img"
           src={animeInfo.bannerImage}
           alt=""
         />
+        <div className="absolute top-72 left-1/2 transform -translate-x-1/2 md:left-36 md:top-72 -translate-y-1/2">
+          <img className="md:w-auto max-w-7xl" src={ImageLargeInfo} alt="" />
+        </div>
       </div>
       <p>{animeInfo.status}</p>
     </div>
