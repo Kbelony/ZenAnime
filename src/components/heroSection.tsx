@@ -10,7 +10,7 @@ const heroSection = () => {
         <Badge className="mb-4" variant="outline">
           Created by a enthusiast 👨🏾‍💻
         </Badge>
-        <h1 className="scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl px-8 mb-4 md:px-56">
+        <h1 className="scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl px-8 mb-4 md:px-56 portrait:px-10">
           <span className="dark:text-white">Your Ultimate </span>
           <span className="text-[#2E7CF6]">Anime Escape</span>
           <span className="dark:text-white"> : Modern, Ad-Free Streaming</span>

@@ -124,7 +124,7 @@ const carouselList = () => {
           <SwiperSlide key={index}>
             <Link to="/anime/$id" params={{ id: anime.id }}>
               <img
-                className=" max-h-52 md:min-h-60 md:max-h-80"
+                className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
                 src={anime.coverImage}
                 alt={anime.title}
               />
@@ -176,7 +176,7 @@ const carouselList = () => {
           <SwiperSlide key={index}>
             <Link to="/anime/$id" params={{ id: anime.id }}>
               <img
-                className=" max-h-52 md:min-h-60 md:max-h-80"
+                className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
                 src={anime.coverImage}
                 alt={anime.title}
               />
@@ -217,7 +217,7 @@ const carouselList = () => {
           <SwiperSlide key={index}>
             <Link to="/anime/$id" params={{ id: anime.id }}>
               <img
-                className=" max-h-52 md:min-h-60 md:max-h-80"
+                className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
                 src={anime.coverImage}
                 alt={anime.title}
               />
@@ -265,7 +265,7 @@ const carouselList = () => {
           <SwiperSlide key={index}>
             <Link to="/anime/$id" params={{ id: anime.id }}>
               <img
-                className=" max-h-52 md:min-h-60 md:max-h-80"
+                className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
                 src={anime.coverImage}
                 alt={anime.title}
               />
