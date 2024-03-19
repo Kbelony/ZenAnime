@@ -6,6 +6,7 @@ import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import { Link } from "@tanstack/react-router";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const carouselList = () => {
   interface Anime {
@@ -16,23 +17,22 @@ const carouselList = () => {
     meanScore: number;
     id: number;
   }
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const [loading, setLoading] = useState(false);
   const [animeListTrending, setAnimeListTrending] = useState<Anime[]>([]);
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const [animeListPopular, setAnimeListPopular] = useState<Anime[]>([]);
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
       const response_trending = await fetch(
         "https://api-amvstrm.nyt92.eu.org/api/v2/trending?limit=24"
       );
       const response_popular = await fetch(
         "https://api-amvstrm.nyt92.eu.org/api/v2/popular?limit=24"
       );
+      await new Promise((resolve) => setTimeout(resolve, 1800));
       const data_trending = await response_trending.json();
       const data_popular = await response_popular.json();
-      console.log(data_popular);
       const trendingData = data_trending.results.map(
         (anime: {
           coverImage: string;
@@ -71,10 +71,17 @@ const carouselList = () => {
       );
       setAnimeListTrending(trendingData);
       setAnimeListPopular(popularData);
-    };
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchData();
   }, []);
+
   const settings = {
     centeredSlides: false,
     spaceBetween: 30,
@@ -112,55 +119,104 @@ const carouselList = () => {
       <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
         A selection of the most popular anime of all time !
       </p>
-      <Swiper {...settings} modules={[Navigation]} className="swiper-container">
-        <div className="flex mt-2 md:mt-8">
-          <h3 className="font-semibold tracking-tight first:mt-0">Trending</h3>
-          <TrendingUp className="ml-1 h-6 w-6" />
+      {loading && (
+        <div>
+          <Swiper
+            {...settings}
+            modules={[Navigation]}
+            className="swiper-container"
+          >
+            {Array.from({ length: 12 }).map((_, index) => (
+              <SwiperSlide key={index}>
+                <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
+                <Skeleton className="h-4 w-36 mb-2" />
+                <div className="flex">
+                  <Skeleton className="h-4 w-16 mr-1" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
-        <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-          A selection of the most trending anime of the moment
-        </p>
-        {animeListPopular.slice(0, 12).map((anime, index) => (
-          <SwiperSlide key={index}>
-            <Link to="/anime/$id" params={{ id: anime.id }}>
-              <img
-                className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
-                src={anime.coverImage}
-                alt={anime.title}
-              />
-            </Link>
-            <Link to="/anime/$id" params={{ id: anime.id }}>
-              <h2
-                className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
-                style={{
-                  whiteSpace: "pre-wrap",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 1,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }} // Assurez-vous que `anime.id` est correctement défini dans vos données
+      )}
+      {!loading && animeListPopular && (
+        <Swiper
+          {...settings}
+          modules={[Navigation]}
+          className="swiper-container"
+        >
+          {loading && (
+            <div>
+              <Swiper
+                {...settings}
+                modules={[Navigation]}
+                className="swiper-container"
               >
-                {anime.title}
-              </h2>
-            </Link>
-
-            {/* <p>Status: {anime.status}</p> */}
-            {anime.genres
-              .split(",")
-              .slice(0, 2)
-              .map((genre, index) => (
-                <Badge
-                  className="text-xs mr-0.5 md:mr-1"
-                  variant="secondary"
-                  key={index}
-                >
-                  {genre}
-                </Badge>
+                {Array.from({ length: 12 }).map((_, index) => (
+                  <SwiperSlide key={index}>
+                    <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
+                    <Skeleton className="h-4 w-36 mb-2" />
+                    <div className="flex">
+                      <Skeleton className="h-4 w-16 mr-1" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </div>
+          )}
+          {!loading && animeListPopular && (
+            <Swiper
+              {...settings}
+              modules={[Navigation]}
+              className="swiper-container"
+            >
+              {animeListPopular.slice(0, 12).map((anime, index) => (
+                <SwiperSlide key={index}>
+                  <Link to="/anime/$id" params={{ id: anime.id }}>
+                    <img
+                      className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
+                      src={anime.coverImage}
+                      alt={anime.title}
+                    />
+                    <h2
+                      className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {anime.title}
+                    </h2>
+                  </Link>
+                  {anime.genres
+                    .split(",")
+                    .slice(0, 2)
+                    .map((genre, index) => (
+                      <Badge
+                        className="text-xs mr-0.5 md:mr-1"
+                        variant="secondary"
+                        key={index}
+                      >
+                        {genre}
+                      </Badge>
+                    ))}
+                </SwiperSlide>
               ))}
-            {/* <p>{anime.meanScore}% of people recommend this content</p> */}
-          </SwiperSlide>
-        ))}
-      </Swiper>
+            </Swiper>
+          )}
+        </Swiper>
+      )}
+      <div className="flex mt-2 md:mt-8">
+        <h3 className="font-semibold tracking-tight first:mt-0">Trending</h3>
+        <TrendingUp className="ml-1 h-6 w-6" />
+      </div>
+      <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+        A selection of the most trending anime of the moment
+      </p>
 
       <Swiper {...settings} modules={[Navigation]} className="swiper-container">
         <div className="flex mt-2 md:mt-8">
@@ -172,87 +228,133 @@ const carouselList = () => {
         <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
           Here is a selection of our current favourites
         </p>
-        {animeListTrending.slice(0, 12).map((anime, index) => (
-          <SwiperSlide key={index}>
-            <Link to="/anime/$id" params={{ id: anime.id }}>
-              <img
-                className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
-                src={anime.coverImage}
-                alt={anime.title}
-              />
-            </Link>
-            <Link to="/anime/$id" params={{ id: anime.id }}>
-              <h2
-                className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
-                style={{
-                  whiteSpace: "pre-wrap",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 1,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }} // Assurez-vous que `anime.id` est correctement défini dans vos données
-              >
-                {anime.title}
-              </h2>
-            </Link>
-            {/* <p>Status: {anime.status}</p> */}
-            {anime.genres
-              .split(",")
-              .slice(0, 2)
-              .map((genre, index) => (
-                <Badge
-                  className="text-xs mr-0.5 md:mr-1"
-                  variant="secondary"
-                  key={index}
-                >
-                  {genre}
-                </Badge>
+        {loading && (
+          <div>
+            <Swiper
+              {...settings}
+              modules={[Navigation]}
+              className="swiper-container"
+            >
+              {Array.from({ length: 12 }).map((_, index) => (
+                <SwiperSlide key={index}>
+                  <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
+                  <Skeleton className="h-4 w-36 mb-2" />
+                  <div className="flex">
+                    <Skeleton className="h-4 w-16 mr-1" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </SwiperSlide>
               ))}
-            {/* <p>{anime.meanScore}% of people recommend this content</p> */}
-          </SwiperSlide>
-        ))}
+            </Swiper>
+          </div>
+        )}
+        {!loading && animeListPopular && (
+          <Swiper
+            {...settings}
+            modules={[Navigation]}
+            className="swiper-container"
+          >
+            {animeListTrending.slice(0, 12).map((anime, index) => (
+              <SwiperSlide key={index}>
+                <Link to="/anime/$id" params={{ id: anime.id }}>
+                  <img
+                    className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
+                    src={anime.coverImage}
+                    alt={anime.title}
+                  />
+                  <h2
+                    className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 1,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {anime.title}
+                  </h2>
+                </Link>
+                {anime.genres
+                  .split(",")
+                  .slice(0, 2)
+                  .map((genre, index) => (
+                    <Badge
+                      className="text-xs mr-0.5 md:mr-1"
+                      variant="secondary"
+                      key={index}
+                    >
+                      {genre}
+                    </Badge>
+                  ))}
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        )}
       </Swiper>
-      <Swiper {...settings} modules={[Navigation]} className="swiper-container">
-        {animeListTrending.slice(12, 24).map((anime, index) => (
-          <SwiperSlide key={index}>
-            <Link to="/anime/$id" params={{ id: anime.id }}>
-              <img
-                className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
-                src={anime.coverImage}
-                alt={anime.title}
-              />
-            </Link>
-            <Link to="/anime/$id" params={{ id: anime.id }}>
-              <h2
-                className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
-                style={{
-                  whiteSpace: "pre-wrap",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 1,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }} // Assurez-vous que `anime.id` est correctement défini dans vos données
-              >
-                {anime.title}
-              </h2>
-            </Link>
-            {/* <p>Status: {anime.status}</p> */}
-            {anime.genres
-              .split(",")
-              .slice(0, 2)
-              .map((genre, index) => (
-                <Badge
-                  className="text-xs mr-0.5 md:mr-1"
-                  variant="secondary"
-                  key={index}
+      {loading && (
+        <div>
+          <Swiper
+            {...settings}
+            modules={[Navigation]}
+            className="swiper-container"
+          >
+            {Array.from({ length: 12 }).map((_, index) => (
+              <SwiperSlide key={index}>
+                <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
+                <Skeleton className="h-4 w-36 mb-2" />
+                <div className="flex">
+                  <Skeleton className="h-4 w-16 mr-1" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
+      )}
+      {!loading && animeListPopular && (
+        <Swiper
+          {...settings}
+          modules={[Navigation]}
+          className="swiper-container"
+        >
+          {animeListTrending.slice(13, 24).map((anime, index) => (
+            <SwiperSlide key={index}>
+              <Link to="/anime/$id" params={{ id: anime.id }}>
+                <img
+                  className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
+                  src={anime.coverImage}
+                  alt={anime.title}
+                />
+                <h2
+                  className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 1,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
                 >
-                  {genre}
-                </Badge>
-              ))}
-            {/* <p>{anime.meanScore}% of people recommend this content</p> */}
-          </SwiperSlide>
-        ))}
-      </Swiper>
+                  {anime.title}
+                </h2>
+              </Link>
+              {anime.genres
+                .split(",")
+                .slice(0, 2)
+                .map((genre, index) => (
+                  <Badge
+                    className="text-xs mr-0.5 md:mr-1"
+                    variant="secondary"
+                    key={index}
+                  >
+                    {genre}
+                  </Badge>
+                ))}
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      )}
       <div className="flex mt-3">
         <h3 className="font-semibold tracking-tight first:mt-0">For you </h3>
         <Wand className="ml-1 h-6 w-6" />
@@ -260,49 +362,72 @@ const carouselList = () => {
       <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
         A selection just for you !
       </p>
-      <Swiper {...settings} modules={[Navigation]} className="swiper-container">
-        {animeListPopular.slice(13, 24).map((anime, index) => (
-          <SwiperSlide key={index}>
-            <Link to="/anime/$id" params={{ id: anime.id }}>
-              <img
-                className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
-                src={anime.coverImage}
-                alt={anime.title}
-              />
-            </Link>
-            <Link to="/anime/$id" params={{ id: anime.id }}>
-              <h2
-                className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
-                style={{
-                  whiteSpace: "pre-wrap",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 1,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }} // Assurez-vous que `anime.id` est correctement défini dans vos données
-              >
-                {anime.title}
-              </h2>
-            </Link>
-            {/* <p>Status: {anime.status}</p> */}
-            {anime.genres
-              .split(",")
-              .slice(0, 2)
-              .map((genre, index) => (
-                <Badge
-                  className="text-xs mr-0.5 md:mr-1"
-                  variant="secondary"
-                  key={index}
+      {loading && (
+        <div>
+          <Swiper
+            {...settings}
+            modules={[Navigation]}
+            className="swiper-container"
+          >
+            {Array.from({ length: 12 }).map((_, index) => (
+              <SwiperSlide key={index}>
+                <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
+                <Skeleton className="h-4 w-36 mb-2" />
+                <div className="flex">
+                  <Skeleton className="h-4 w-16 mr-1" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
+      )}
+      {!loading && animeListPopular && (
+        <Swiper
+          {...settings}
+          modules={[Navigation]}
+          className="swiper-container"
+        >
+          {animeListPopular.slice(13, 24).map((anime, index) => (
+            <SwiperSlide key={index}>
+              <Link to="/anime/$id" params={{ id: anime.id }}>
+                <img
+                  className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
+                  src={anime.coverImage}
+                  alt={anime.title}
+                />
+                <h2
+                  className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 1,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
                 >
-                  {genre}
-                </Badge>
-              ))}
-            {/* <p>{anime.meanScore}% of people recommend this content</p> */}
-          </SwiperSlide>
-        ))}
-      </Swiper>
+                  {anime.title}
+                </h2>
+              </Link>
+              {anime.genres
+                .split(",")
+                .slice(0, 2)
+                .map((genre, index) => (
+                  <Badge
+                    className="text-xs mr-0.5 md:mr-1"
+                    variant="secondary"
+                    key={index}
+                  >
+                    {genre}
+                  </Badge>
+                ))}
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      )}
     </div>
   );
 };
 
 export default carouselList;
+
