@@ -11,8 +11,12 @@ export const Route = createRootRoute({
         <div className="navbar flex flex-col p-3">
           <nav className="grid grid-flow-col">
             <Link to="/" className="[&.active]:font-bold">
-              <div className="flex logo_label">
-                <img className="logo h-7 w-7 mt-1" src={Logo} alt="Logo" />
+              <div className="flex logo_label mt-1">
+                <img
+                  className="logo h-7 w-7 md:ml-8 ml-3"
+                  src={Logo}
+                  alt="Logo"
+                />
 
                 <h4 className="ml-1 text-lg">
                   <span className="dark:text-white">zen</span>
