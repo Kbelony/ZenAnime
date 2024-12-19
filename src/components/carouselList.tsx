@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Gem, Star, Wand } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
@@ -10,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const CarouselList = () => {
   interface Anime {
+    episodes: string;
     coverImage: string;
     title: string;
     status: string;
@@ -33,7 +33,8 @@ const CarouselList = () => {
       await new Promise((resolve) => setTimeout(resolve, 1800));
       const data_trending = await response_trending.json();
       const data_popular = await response_popular.json();
-      console.log(data_popular);
+      console.log("Popular : ", data_popular);
+      console.log("Trending : ", data_trending);
       const trendingData = data_trending.results.map(
         (anime: {
           coverImage: {
@@ -43,6 +44,7 @@ const CarouselList = () => {
           status: string;
           genres: string[];
           meanScore: number;
+          episodes: number;
           id: string;
           animeId: number;
         }) => ({
@@ -52,6 +54,7 @@ const CarouselList = () => {
           genres: anime.genres.join(", "),
           meanScore: anime.meanScore.toString(),
           id: anime.id,
+          episodes: anime.episodes,
         })
       );
       const popularData = data_popular.results.map(
@@ -63,6 +66,7 @@ const CarouselList = () => {
           status: string;
           genres: string[];
           meanScore: number;
+          episodes: number;
           id: string;
           animeId: number;
         }) => ({
@@ -72,6 +76,7 @@ const CarouselList = () => {
           genres: anime.genres.join(", "),
           meanScore: anime.meanScore.toString(),
           id: anime.id,
+          episodes: anime.episodes,
         })
       );
       setAnimeListTrending(trendingData);
@@ -119,7 +124,7 @@ const CarouselList = () => {
     <div className="carousel_list px-8 mt-7 md:px-20 md:mt-10 w-full ">
       <div className="flex">
         <h3 className="font-semibold tracking-tight first:mt-0">Popular</h3>
-        <Star className="ml-1 h-6 w-6" />
+        <Star className="ml-2 mt-0.5 h-5 w-5" />
       </div>
       <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
         A selection of the most popular anime of all time !
@@ -185,7 +190,7 @@ const CarouselList = () => {
                       alt={anime.title}
                     />
                     <h2
-                      className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                      className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base"
                       style={{
                         whiteSpace: "pre-wrap",
                         display: "-webkit-box",
@@ -197,7 +202,7 @@ const CarouselList = () => {
                       {anime.title}
                     </h2>
                   </Link>
-                  {anime.genres
+                  {/* {anime.genres
                     .split(",")
                     .slice(0, 2)
                     .map((genre, index) => (
@@ -208,7 +213,12 @@ const CarouselList = () => {
                       >
                         {genre}
                       </Badge>
-                    ))}
+                    ))} */}
+                  <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                    {anime.episodes === null
+                      ? "X episodes"
+                      : `${anime.episodes} episodes`}
+                  </p>
                 </SwiperSlide>
               ))}
             </Swiper>
@@ -217,9 +227,9 @@ const CarouselList = () => {
       )}
       <div className="flex mt-2 md:mt-8">
         <h3 className="font-semibold tracking-tight first:mt-0">Trending</h3>
-        <TrendingUp className="ml-1 h-6 w-6" />
+        <TrendingUp className="ml-2 mt-0.5 h-5 w-5" />
       </div>
-      <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+      <p className="mb-3 text-xs md:text-sm text-slate-600 dark:text-slate-400">
         A selection of the most trending anime of the moment
       </p>
 
@@ -228,7 +238,7 @@ const CarouselList = () => {
           <h3 className="font-semibold tracking-tight first:mt-0">
             Our selection
           </h3>
-          <Gem className="ml-1 h-6 w-6" />
+          <Gem className="ml-2 mt-0.5 h-5 w-5" />
         </div>
         <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
           Here is a selection of our current favourites
@@ -268,7 +278,7 @@ const CarouselList = () => {
                     alt={anime.title}
                   />
                   <h2
-                    className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                    className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-1"
                     style={{
                       whiteSpace: "pre-wrap",
                       display: "-webkit-box",
@@ -280,7 +290,7 @@ const CarouselList = () => {
                     {anime.title}
                   </h2>
                 </Link>
-                {anime.genres
+                {/* {anime.genres
                   .split(",")
                   .slice(0, 2)
                   .map((genre, index) => (
@@ -291,7 +301,12 @@ const CarouselList = () => {
                     >
                       {genre}
                     </Badge>
-                  ))}
+                  ))} */}
+                <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                  {anime.episodes === null
+                    ? "X episodes"
+                    : `${anime.episodes} episodes`}
+                </p>
               </SwiperSlide>
             ))}
           </Swiper>
@@ -344,25 +359,30 @@ const CarouselList = () => {
                   {anime.title}
                 </h2>
               </Link>
-              {anime.genres
-                .split(",")
-                .slice(0, 2)
-                .map((genre, index) => (
-                  <Badge
-                    className="text-xs mr-0.5 md:mr-1 cursor-default"
-                    variant="secondary"
-                    key={index}
-                  >
-                    {genre}
-                  </Badge>
-                ))}
+              {/* {anime.genres
+                  .split(",")
+                  .slice(0, 2)
+                  .map((genre, index) => (
+                    <Badge
+                      className="text-xs mr-0.5 md:mr-1 cursor-default"
+                      variant="secondary"
+                      key={index}
+                    >
+                      {genre}
+                    </Badge>
+                  ))} */}
+              <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                {anime.episodes === null
+                  ? "X episodes"
+                  : `${anime.episodes} episodes`}
+              </p>
             </SwiperSlide>
           ))}
         </Swiper>
       )}
       <div className="flex mt-3">
         <h3 className="font-semibold tracking-tight first:mt-0">For you </h3>
-        <Wand className="ml-1 h-6 w-6" />
+        <Wand className="ml-2 mt-0.5 h-5 w-5" />
       </div>
       <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
         A selection just for you !
@@ -414,18 +434,23 @@ const CarouselList = () => {
                   {anime.title}
                 </h2>
               </Link>
-              {anime.genres
-                .split(",")
-                .slice(0, 2)
-                .map((genre, index) => (
-                  <Badge
-                    className="text-xs mr-0.5 md:mr-1 cursor-default"
-                    variant="secondary"
-                    key={index}
-                  >
-                    {genre}
-                  </Badge>
-                ))}
+              {/* {anime.genres
+                  .split(",")
+                  .slice(0, 2)
+                  .map((genre, index) => (
+                    <Badge
+                      className="text-xs mr-0.5 md:mr-1 cursor-default"
+                      variant="secondary"
+                      key={index}
+                    >
+                      {genre}
+                    </Badge>
+                  ))} */}
+              <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                {anime.episodes === null
+                  ? "X episodes"
+                  : `${anime.episodes} episodes`}
+              </p>
             </SwiperSlide>
           ))}
         </Swiper>
@@ -435,4 +460,3 @@ const CarouselList = () => {
 };
 
 export default CarouselList;
-
