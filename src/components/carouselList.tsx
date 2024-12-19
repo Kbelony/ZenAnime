@@ -14,7 +14,7 @@ const CarouselList = () => {
     title: string;
     status: string;
     genres: string;
-    meanScore: string;
+    // meanScore: string;
     id: string;
   }
   const [loading, setLoading] = useState(false);
@@ -43,7 +43,7 @@ const CarouselList = () => {
           title: { english: string };
           status: string;
           genres: string[];
-          meanScore: number;
+          // meanScore: number;
           episodes: number;
           id: string;
           animeId: number;
@@ -52,7 +52,7 @@ const CarouselList = () => {
           title: anime.title.english,
           status: anime.status,
           genres: anime.genres.join(", "),
-          meanScore: anime.meanScore.toString(),
+          // meanScore: anime.meanScore.toString(),
           id: anime.id,
           episodes: anime.episodes,
         })
@@ -65,7 +65,7 @@ const CarouselList = () => {
           title: { english: string };
           status: string;
           genres: string[];
-          meanScore: number;
+          // meanScore: number;
           episodes: number;
           id: string;
           animeId: number;
@@ -74,7 +74,7 @@ const CarouselList = () => {
           title: anime.title.english,
           status: anime.status,
           genres: anime.genres.join(", "),
-          meanScore: anime.meanScore.toString(),
+          // meanScore: anime.meanScore.toString(),
           id: anime.id,
           episodes: anime.episodes,
         })

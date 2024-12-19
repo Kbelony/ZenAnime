@@ -21,7 +21,7 @@ const headerInfo = () => {
     title: string;
     status: string;
     genres: string[];
-    meanScore: number;
+    // meanScore: number;
     id: number;
     season: string;
     episodes: number;
