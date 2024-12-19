@@ -1,4 +1,5 @@
-import React from "react";
+/* eslint-disable react-refresh/only-export-components */
+
 import HeroSection from "../components/heroSection";
 import CarouselList from "../components/carouselList";
 import { createFileRoute } from "@tanstack/react-router";
