@@ -8,14 +8,14 @@ import "swiper/css/navigation";
 import { Link } from "@tanstack/react-router";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const carouselList = () => {
+const CarouselList = () => {
   interface Anime {
     coverImage: string;
     title: string;
     status: string;
     genres: string;
-    meanScore: number;
-    id: number;
+    meanScore: string;
+    id: string;
   }
   const [loading, setLoading] = useState(false);
   const [animeListTrending, setAnimeListTrending] = useState<Anime[]>([]);
@@ -25,17 +25,20 @@ const carouselList = () => {
     try {
       setLoading(true);
       const response_trending = await fetch(
-        "https://api-amvstrm.nyt92.eu.org/api/v2/trending?limit=24"
+        "https://api.amvstr.me/api/v2/trending?limit=24"
       );
       const response_popular = await fetch(
-        "https://api-amvstrm.nyt92.eu.org/api/v2/popular?limit=24"
+        "https://api.amvstr.me/api/v2/popular?limit=24"
       );
       await new Promise((resolve) => setTimeout(resolve, 1800));
       const data_trending = await response_trending.json();
       const data_popular = await response_popular.json();
+      console.log(data_popular);
       const trendingData = data_trending.results.map(
         (anime: {
-          coverImage: string;
+          coverImage: {
+            extraLarge: string;
+          };
           title: { english: string };
           status: string;
           genres: string[];
@@ -47,13 +50,15 @@ const carouselList = () => {
           title: anime.title.english,
           status: anime.status,
           genres: anime.genres.join(", "),
-          meanScore: anime.meanScore,
+          meanScore: anime.meanScore.toString(),
           id: anime.id,
         })
       );
       const popularData = data_popular.results.map(
         (anime: {
-          coverImage: string;
+          coverImage: {
+            extraLarge: string;
+          };
           title: { english: string };
           status: string;
           genres: string[];
@@ -65,7 +70,7 @@ const carouselList = () => {
           title: anime.title.english,
           status: anime.status,
           genres: anime.genres.join(", "),
-          meanScore: anime.meanScore,
+          meanScore: anime.meanScore.toString(),
           id: anime.id,
         })
       );
@@ -111,7 +116,7 @@ const carouselList = () => {
   };
 
   return (
-    <div className="carousel_list px-8 mt-7 md:px-20 md:mt-10">
+    <div className="carousel_list px-8 mt-7 md:px-20 md:mt-10 w-full ">
       <div className="flex">
         <h3 className="font-semibold tracking-tight first:mt-0">Popular</h3>
         <Star className="ml-1 h-6 w-6" />
@@ -175,7 +180,7 @@ const carouselList = () => {
                 <SwiperSlide key={index}>
                   <Link to="/anime/$id" params={{ id: anime.id }}>
                     <img
-                      className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
+                      className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
                       src={anime.coverImage}
                       alt={anime.title}
                     />
@@ -197,7 +202,7 @@ const carouselList = () => {
                     .slice(0, 2)
                     .map((genre, index) => (
                       <Badge
-                        className="text-xs mr-0.5 md:mr-1"
+                        className="text-xs mr-0.5 md:mr-1 cursor-default"
                         variant="secondary"
                         key={index}
                       >
@@ -258,7 +263,7 @@ const carouselList = () => {
               <SwiperSlide key={index}>
                 <Link to="/anime/$id" params={{ id: anime.id }}>
                   <img
-                    className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
+                    className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
                     src={anime.coverImage}
                     alt={anime.title}
                   />
@@ -280,7 +285,7 @@ const carouselList = () => {
                   .slice(0, 2)
                   .map((genre, index) => (
                     <Badge
-                      className="text-xs mr-0.5 md:mr-1"
+                      className="text-xs mr-0.5 md:mr-1 cursor-default"
                       variant="secondary"
                       key={index}
                     >
@@ -322,7 +327,7 @@ const carouselList = () => {
             <SwiperSlide key={index}>
               <Link to="/anime/$id" params={{ id: anime.id }}>
                 <img
-                  className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
+                  className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
                   src={anime.coverImage}
                   alt={anime.title}
                 />
@@ -344,7 +349,7 @@ const carouselList = () => {
                 .slice(0, 2)
                 .map((genre, index) => (
                   <Badge
-                    className="text-xs mr-0.5 md:mr-1"
+                    className="text-xs mr-0.5 md:mr-1 cursor-default"
                     variant="secondary"
                     key={index}
                   >
@@ -392,7 +397,7 @@ const carouselList = () => {
             <SwiperSlide key={index}>
               <Link to="/anime/$id" params={{ id: anime.id }}>
                 <img
-                  className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10"
+                  className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
                   src={anime.coverImage}
                   alt={anime.title}
                 />
@@ -414,7 +419,7 @@ const carouselList = () => {
                 .slice(0, 2)
                 .map((genre, index) => (
                   <Badge
-                    className="text-xs mr-0.5 md:mr-1"
+                    className="text-xs mr-0.5 md:mr-1 cursor-default"
                     variant="secondary"
                     key={index}
                   >
@@ -429,5 +434,5 @@ const carouselList = () => {
   );
 };
 
-export default carouselList;
+export default CarouselList;
 
