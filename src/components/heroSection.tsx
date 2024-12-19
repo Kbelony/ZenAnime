@@ -18,7 +18,7 @@ const heroSection = () => {
           Lorem ipsum dolor sit, amet consectetur adipisicing elit. Maiores, ex
           necessitatibus. Nihil facilis atque eaque voluptate nam quis sapiente
         </p>
-        <Button variant="secondary">
+        <Button className="rounded-full" variant="secondary">
           <Shuffle className="mr-2 h-4 w-4" /> Recommendation
         </Button>
         <div className="icon mt-6 flex justify-center text-xs md:text-base	">
