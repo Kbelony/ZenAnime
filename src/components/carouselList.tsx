@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { TrendingUp, Gem, Star, Wand } from "lucide-react";
+import { TrendingUp, Gem, Star, Wand, Clapperboard } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import "swiper/css";
@@ -125,15 +125,15 @@ const CarouselList = () => {
     breakpoints: {
       1200: {
         slidesPerView: 6,
-        spaceBetween: 15,
+        spaceBetween: 25,
       },
       1000: {
         slidesPerView: 5,
-        spaceBetween: 15,
+        spaceBetween: 25,
       },
       800: {
         slidesPerView: 4,
-        spaceBetween: 15,
+        spaceBetween: 25,
       },
       600: {
         slidesPerView: 3,
@@ -346,7 +346,7 @@ const CarouselList = () => {
       <div className="trailer lg:hidden">
         <div className="flex mt-3">
           <h3 className="font-semibold tracking-tight first:mt-0">Trailer </h3>
-          <Wand className="ml-2 mt-0.5 h-5 w-5" />
+          <Clapperboard className="ml-2 mt-0.5 h-5 w-5" />
         </div>
         <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
           A selection of new trailer !
@@ -554,28 +554,31 @@ const CarouselList = () => {
             modules={[Navigation]}
             className="swiper-container"
           >
-            {animeListPopular.slice(13, 24).map((anime, index) => (
-              <SwiperSlide key={index}>
-                <Link to="/anime/$id" params={{ id: anime.id }}>
-                  <img
-                    className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
-                    src={anime.trailer?.thumbnail || anime.coverImage}
-                    alt={anime.title}
-                  />
-                  <h2
-                    className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
-                    style={{
-                      whiteSpace: "pre-wrap",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 1,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {anime.title}
-                  </h2>
-                </Link>
-                {/* {anime.genres
+            {[...animeListPopular]
+              .slice(13, 24)
+              .sort(() => Math.random() - 0.5)
+              .map((anime, index) => (
+                <SwiperSlide key={index}>
+                  <Link to="/anime/$id" params={{ id: anime.id }}>
+                    <img
+                      className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
+                      src={anime.trailer?.thumbnail || anime.coverImage}
+                      alt={anime.title}
+                    />
+                    <h2
+                      className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {anime.title}
+                    </h2>
+                  </Link>
+                  {/* {anime.genres
                   .split(",")
                   .slice(0, 2)
                   .map((genre, index) => (
@@ -587,13 +590,13 @@ const CarouselList = () => {
                       {genre}
                     </Badge>
                   ))} */}
-                <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                  {anime.episodes === null
-                    ? "X episodes"
-                    : `${anime.episodes} episodes`}
-                </p>
-              </SwiperSlide>
-            ))}
+                  <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                    {anime.episodes === null
+                      ? "X episodes"
+                      : `${anime.episodes} episodes`}
+                  </p>
+                </SwiperSlide>
+              ))}
           </Swiper>
         )}
       </div>
