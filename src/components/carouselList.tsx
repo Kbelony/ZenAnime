@@ -6,6 +6,17 @@ import "swiper/css";
 import "swiper/css/navigation";
 import { Link } from "@tanstack/react-router";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const CarouselList = () => {
   interface Anime {
@@ -114,15 +125,15 @@ const CarouselList = () => {
     breakpoints: {
       1200: {
         slidesPerView: 6,
-        spaceBetween: 25,
+        spaceBetween: 15,
       },
       1000: {
         slidesPerView: 5,
-        spaceBetween: 25,
+        spaceBetween: 15,
       },
       800: {
         slidesPerView: 4,
-        spaceBetween: 25,
+        spaceBetween: 15,
       },
       600: {
         slidesPerView: 3,
@@ -372,32 +383,56 @@ const CarouselList = () => {
               .filter((anime) => anime.trailer && anime.trailer.thumbnail)
               .map((anime, index) => (
                 <SwiperSlide key={index}>
-                  <a
-                    href={`https://www.youtube.com/watch?v=${anime.trailer.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img
-                      className=" md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
-                      src={anime.trailer.thumbnail}
-                      alt={anime.title}
-                    />
-                    <h2
-                      className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
-                      style={{
-                        whiteSpace: "pre-wrap",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 1,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {anime.title} Trailer
-                    </h2>
-                    <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                      Season : {anime.season}
-                    </p>
-                  </a>
+                  <AlertDialog>
+                    <AlertDialogTrigger>
+                      <a>
+                        <img
+                          className=" md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
+                          src={anime.trailer.thumbnail}
+                          alt={anime.title}
+                        />
+                        <h2
+                          className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                          style={{
+                            whiteSpace: "pre-wrap",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 1,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {anime.title} Trailer
+                        </h2>
+                        <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                          Season : {anime.season}
+                        </p>
+                      </a>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Are you absolutely sure?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently
+                          delete your account and remove your data from our
+                          servers.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction asChild>
+                          <a
+                            href={`https://www.youtube.com/watch?v=${anime.trailer.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Continue
+                          </a>
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </SwiperSlide>
               ))}
           </Swiper>
