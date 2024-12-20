@@ -14,7 +14,10 @@ const CarouselList = () => {
     title: string;
     status: string;
     genres: string;
-    // meanScore: string;
+    trailer: {
+      thumbnail: string;
+      id: string;
+    };
     id: string;
   }
   const [loading, setLoading] = useState(false);
@@ -40,6 +43,10 @@ const CarouselList = () => {
           coverImage: {
             extraLarge: string;
           };
+          trailer: {
+            thumbnail: string;
+            id: string;
+          };
           title: { english: string };
           status: string;
           genres: string[];
@@ -55,6 +62,10 @@ const CarouselList = () => {
           // meanScore: anime.meanScore.toString(),
           id: anime.id,
           episodes: anime.episodes,
+          trailer: {
+            thumbnail: anime.trailer?.thumbnail,
+            id: anime.trailer?.id,
+          },
         })
       );
       const popularData = data_popular.results.map(
@@ -418,7 +429,7 @@ const CarouselList = () => {
               <Link to="/anime/$id" params={{ id: anime.id }}>
                 <img
                   className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
-                  src={anime.coverImage}
+                  src={anime.trailer?.thumbnail || anime.coverImage}
                   alt={anime.title}
                 />
                 <h2
@@ -455,6 +466,90 @@ const CarouselList = () => {
           ))}
         </Swiper>
       )}
+      <div className="lg:hidden">
+        <div className="flex mt-3">
+          <h3 className="font-semibold tracking-tight first:mt-0">Trailer </h3>
+          <Wand className="ml-2 mt-0.5 h-5 w-5" />
+        </div>
+        <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+          A selection of new trailer !
+        </p>
+        {loading && (
+          <div>
+            <Swiper
+              {...settings}
+              modules={[Navigation]}
+              className="swiper-container"
+            >
+              {Array.from({ length: 12 }).map((_, index) => (
+                <SwiperSlide key={index}>
+                  <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
+                  <Skeleton className="h-4 w-36 mb-2" />
+                  <div className="flex">
+                    <Skeleton className="h-4 w-16 mr-1" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
+        )}
+        {!loading && animeListPopular && (
+          <Swiper
+            {...settings}
+            modules={[Navigation]}
+            className="swiper-container"
+          >
+            {[...animeListTrending]
+              .slice(13, 24)
+              .sort(() => Math.random() - 0.5)
+              .map((anime, index) => (
+                <SwiperSlide key={index}>
+                  <a
+                    href={`https://www.youtube.com/watch?v=${anime.trailer.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
+                      src={anime.trailer.thumbnail}
+                      alt={anime.title}
+                    />
+                    <h2
+                      className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {anime.title}
+                    </h2>
+                  </a>
+                  {/* {anime.genres
+                  .split(",")
+                  .slice(0, 2)
+                  .map((genre, index) => (
+                    <Badge
+                      className="text-xs mr-0.5 md:mr-1 cursor-default"
+                      variant="secondary"
+                      key={index}
+                    >
+                      {genre}
+                    </Badge>
+                  ))} */}
+                  <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                    {anime.episodes === null
+                      ? "X episodes"
+                      : `${anime.episodes} episodes`}
+                  </p>
+                </SwiperSlide>
+              ))}
+          </Swiper>
+        )}
+      </div>
     </div>
   );
 };
