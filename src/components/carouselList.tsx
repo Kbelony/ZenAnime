@@ -463,7 +463,7 @@ const CarouselList = () => {
           </Swiper>
         )}
       </div>
-      <div className="upcoming md:hidden lg:block">
+      <div className="upcoming hidden md:block">
         <div className="flex mt-3">
           <h3 className="font-semibold tracking-tight first:mt-0">
             Upcoming next
