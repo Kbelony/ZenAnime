@@ -20,6 +20,10 @@ import {
 
 const CarouselList = () => {
   interface Anime {
+    nextAiringEpisode: {
+      airingAt: number;
+      episode: number;
+    } | null;
     episodes: string;
     coverImage: string;
     season: string;
@@ -31,6 +35,7 @@ const CarouselList = () => {
       id: string;
     };
     id: string;
+    bannerImage: string;
   }
   const [loading, setLoading] = useState(false);
   const [animeListTrending, setAnimeListTrending] = useState<Anime[]>([]);
@@ -59,7 +64,12 @@ const CarouselList = () => {
             thumbnail: string;
             id: string;
           };
+          nextAiringEpisode: {
+            airingAt: number;
+            episode: number;
+          };
           title: { english: string };
+          bannerImage: string;
           status: string;
           season: string;
           genres: string[];
@@ -70,6 +80,7 @@ const CarouselList = () => {
         }) => ({
           coverImage: anime.coverImage.extraLarge,
           title: anime.title.english,
+          bannerImage: anime.bannerImage,
           status: anime.status,
           season: anime.season,
           genres: anime.genres.join(", "),
@@ -79,6 +90,10 @@ const CarouselList = () => {
           trailer: {
             thumbnail: anime.trailer?.thumbnail,
             id: anime.trailer?.id,
+          },
+          nextAiringEpisode: {
+            airingAt: anime.nextAiringEpisode?.airingAt,
+            episode: anime.nextAiringEpisode?.episode,
           },
         })
       );
@@ -151,6 +166,16 @@ const CarouselList = () => {
     loop: false,
     navigation: true,
     slidesPerView: 1,
+  };
+
+  const settingsUpcoming = {
+    centeredSlides: false,
+    direction: "vertical" as const,
+    spaceBetween: 20,
+    loop: false,
+    navigation: true,
+    slidesPerView: 2,
+    slidesPerGroup: 2,
   };
 
   return (
@@ -438,6 +463,146 @@ const CarouselList = () => {
           </Swiper>
         )}
       </div>
+      <div className="upcoming md:hidden lg:block">
+        <div className="flex mt-3">
+          <h3 className="font-semibold tracking-tight first:mt-0">
+            Upcoming next
+          </h3>
+          <Clapperboard className="ml-2 mt-0.5 h-5 w-5" />
+        </div>
+        <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+          A selection of new trailer !
+        </p>
+        {loading && (
+          <div>
+            <Swiper
+              {...settings}
+              modules={[Navigation]}
+              className="swiper-container"
+            >
+              {Array.from({ length: 12 }).map((_, index) => (
+                <SwiperSlide key={index}>
+                  <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
+                  <Skeleton className="h-4 w-36 mb-2" />
+                  <div className="flex">
+                    <Skeleton className="h-4 w-16 mr-1" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
+        )}
+        {!loading && animeListTrending && (
+          <div className="flex">
+            <div className="mainUpcoming">
+              {[...animeListTrending]
+                .slice(0, 24)
+                .filter(
+                  (anime) =>
+                    anime.nextAiringEpisode !== null &&
+                    anime.bannerImage !== null
+                )
+                .slice(0, 1)
+                .map((anime, index) => (
+                  <div key={index}>
+                    <Link
+                      className="flex pr-6"
+                      to="/anime/$id"
+                      params={{ id: anime.id }}
+                    >
+                      <img
+                        className=" max-h-52 min-h-80 rounded-lg object-cover"
+                        src={anime.bannerImage}
+                        alt={anime.title}
+                      />
+                    </Link>
+                  </div>
+                ))}
+            </div>
+            <Swiper
+              {...settingsUpcoming}
+              modules={[Navigation]}
+              className="swiper-container h-[315px]"
+            >
+              {[...animeListTrending]
+                .slice(0, 30)
+                .sort(() => Math.random() - 0.5)
+                .filter(
+                  (anime) =>
+                    anime.nextAiringEpisode !== null &&
+                    anime.nextAiringEpisode.episode !== undefined &&
+                    anime.bannerImage !== null &&
+                    anime.id !==
+                      [...animeListTrending]
+                        .slice(0, 30)
+                        .filter(
+                          (a) =>
+                            a.nextAiringEpisode !== null &&
+                            a.nextAiringEpisode.episode !== undefined &&
+                            a.bannerImage !== null
+                        )[0]?.id
+                )
+                .map((anime, index) => (
+                  <SwiperSlide key={index}>
+                    <Link
+                      className="flex"
+                      to="/anime/$id"
+                      params={{ id: anime.id }}
+                    >
+                      <img
+                        className="w-64 max-h-52 min-h-36 rounded-lg object-cover"
+                        src={anime.bannerImage}
+                        alt={anime.title}
+                      />
+                      <div className="block ml-3">
+                        <h2
+                          className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base"
+                          style={{
+                            whiteSpace: "pre-wrap",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 1,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {anime.title}
+                        </h2>
+                        <div className="flex">
+                          <p className="mb-3 mt-1 pr-5 text-xs md:text-sm">
+                            {anime.nextAiringEpisode
+                              ? `Episode  ${anime.nextAiringEpisode.episode}`
+                              : anime.nextAiringEpisode === undefined
+                                ? "episode this week"
+                                : "X episodes"}
+                          </p>
+                          <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                            {anime.nextAiringEpisode
+                              ? new Date(
+                                  anime.nextAiringEpisode.airingAt * 1000
+                                ).toString() === "Invalid Date"
+                                ? ""
+                                : new Date(
+                                    anime.nextAiringEpisode.airingAt * 1000
+                                  )
+                                    .toLocaleString("en-US", {
+                                      weekday: "short",
+                                      hour: "numeric",
+                                      minute: "numeric",
+                                      hour12: true,
+                                    })
+                                    .replace(" ", ", ")
+                              : ""}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  </SwiperSlide>
+                ))}
+            </Swiper>
+          </div>
+        )}
+      </div>
       <div className="selection">
         <div className="flex mt-2 md:mt-8">
           <h3 className="font-semibold tracking-tight first:mt-0">
@@ -468,7 +633,7 @@ const CarouselList = () => {
             </Swiper>
           </div>
         )}
-        {!loading && animeListPopular && (
+        {!loading && animeListTrending && (
           <Swiper
             {...settings}
             modules={[Navigation]}
