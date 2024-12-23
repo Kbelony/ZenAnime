@@ -642,6 +642,7 @@ const CarouselList = () => {
             {[...animeListTrending]
               .slice(13, 24)
               .sort(() => Math.random() - 0.5)
+              .filter((anime) => anime.title !== null)
               .map((anime, index) => (
                 <SwiperSlide key={index}>
                   <Link to="/anime/$id" params={{ id: anime.id }}>
