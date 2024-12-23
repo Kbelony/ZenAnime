@@ -39,7 +39,7 @@ const CarouselList = () => {
     title: string;
     status: string;
     genres: string;
-    meanScore: string;
+    meanScore: number;
     trailer: {
       thumbnail: string;
       id: string;
@@ -83,7 +83,7 @@ const CarouselList = () => {
           status: string;
           season: string;
           genres: string[];
-          meanScore: string;
+          meanScore: number;
           episodes: number;
           id: string;
           animeId: number;
@@ -115,7 +115,7 @@ const CarouselList = () => {
           title: { english: string };
           status: string;
           genres: string[];
-          meanScore: string;
+          meanScore: number;
           episodes: number;
           id: string;
           animeId: number;
@@ -161,7 +161,7 @@ const CarouselList = () => {
         spaceBetween: 25,
       },
       600: {
-        slidesPerView: 3,
+        slidesPerView: 4,
       },
       299: {
         slidesPerView: 2,
@@ -286,7 +286,7 @@ const CarouselList = () => {
                                 key={0}
                               >
                                 <Star className="h-4 w-4 mr-1" />
-                                {anime.meanScore}
+                                {(anime.meanScore / 20).toFixed(1)}
                               </Badge>
                             )}
                           </div>
@@ -403,7 +403,7 @@ const CarouselList = () => {
                                 key={0}
                               >
                                 <Star className="h-4 w-4 mr-1" />
-                                {anime.meanScore}
+                                {(anime.meanScore / 20).toFixed(1)}
                               </Badge>
                             )}
                           </div>
@@ -567,7 +567,6 @@ const CarouselList = () => {
           <div className="flex">
             <div className="mainUpcoming">
               {[...animeListTrending]
-                .slice(0, 24)
                 .filter(
                   (anime) =>
                     anime.nextAiringEpisode !== null &&
@@ -740,7 +739,7 @@ const CarouselList = () => {
                               key={0}
                             >
                               <Star className="h-4 w-4 mr-1" />
-                              {anime.meanScore}
+                              {(anime.meanScore / 20).toFixed(1)}
                             </Badge>
                           )}
                         </div>
@@ -835,7 +834,7 @@ const CarouselList = () => {
                               key={0}
                             >
                               <Star className="h-4 w-4 mr-1" />
-                              {anime.meanScore}
+                              {(anime.meanScore / 20).toFixed(1)}
                             </Badge>
                           )}
                         </div>
