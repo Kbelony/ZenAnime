@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "./ui/badge";
 
 const CarouselList = () => {
   interface Anime {
@@ -30,6 +31,7 @@ const CarouselList = () => {
     title: string;
     status: string;
     genres: string;
+    meanScore: string;
     trailer: {
       thumbnail: string;
       id: string;
@@ -73,7 +75,7 @@ const CarouselList = () => {
           status: string;
           season: string;
           genres: string[];
-          // meanScore: number;
+          meanScore: string;
           episodes: number;
           id: string;
           animeId: number;
@@ -84,7 +86,7 @@ const CarouselList = () => {
           status: anime.status,
           season: anime.season,
           genres: anime.genres.join(", "),
-          // meanScore: anime.meanScore.toString(),
+          meanScore: anime.meanScore,
           id: anime.id,
           episodes: anime.episodes,
           trailer: {
@@ -105,7 +107,7 @@ const CarouselList = () => {
           title: { english: string };
           status: string;
           genres: string[];
-          // meanScore: number;
+          meanScore: string;
           episodes: number;
           id: string;
           animeId: number;
@@ -114,7 +116,7 @@ const CarouselList = () => {
           title: anime.title.english,
           status: anime.status,
           genres: anime.genres.join(", "),
-          // meanScore: anime.meanScore.toString(),
+          meanScore: anime.meanScore,
           id: anime.id,
           episodes: anime.episodes,
         })
@@ -243,11 +245,38 @@ const CarouselList = () => {
                 {animeListPopular.slice(0, 12).map((anime, index) => (
                   <SwiperSlide key={index}>
                     <Link to="/anime/$id" params={{ id: anime.id }}>
-                      <img
-                        className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
-                        src={anime.coverImage}
-                        alt={anime.title}
-                      />
+                      <div className="relative">
+                        <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
+                          <div className="statusBadge hidden md:block">
+                            {anime.status && (
+                              <Badge
+                                className="text-xs mr-0.5 md:mr-1 cursor-default"
+                                variant="secondary"
+                                key={0}
+                              >
+                                {anime.status}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="meanScoreBadge lg:ml-7">
+                            {anime.meanScore && (
+                              <Badge
+                                className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default"
+                                variant="secondary"
+                                key={0}
+                              >
+                                <Star className="h-4 w-4 mr-1" />
+                                {anime.meanScore}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <img
+                          className="max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
+                          src={anime.coverImage}
+                          alt={anime.title}
+                        />
+                      </div>
                       <h2
                         className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base"
                         style={{
@@ -261,18 +290,6 @@ const CarouselList = () => {
                         {anime.title}
                       </h2>
                     </Link>
-                    {/* {anime.genres
-                    .split(",")
-                    .slice(0, 2)
-                    .map((genre, index) => (
-                      <Badge
-                        className="text-xs mr-0.5 md:mr-1 cursor-default"
-                        variant="secondary"
-                        key={index}
-                      >
-                        {genre}
-                      </Badge>
-                    ))} */}
                     <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
                       {anime.episodes === null
                         ? "X episodes"
@@ -324,46 +341,67 @@ const CarouselList = () => {
               modules={[Navigation]}
               className="swiper-container"
             >
-              {animeListTrending.slice(0, 12).map((anime, index) => (
-                <SwiperSlide key={index}>
-                  <Link to="/anime/$id" params={{ id: anime.id }}>
-                    <img
-                      className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
-                      src={anime.coverImage}
-                      alt={anime.title}
-                    />
-                    <h2
-                      className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-1"
-                      style={{
-                        whiteSpace: "pre-wrap",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 1,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {anime.title}
-                    </h2>
-                  </Link>
-                  {/* {anime.genres
-                  .split(",")
-                  .slice(0, 2)
-                  .map((genre, index) => (
-                    <Badge
-                      className="text-xs mr-0.5 md:mr-1 cursor-default"
-                      variant="secondary"
-                      key={index}
-                    >
-                      {genre}
-                    </Badge>
-                  ))} */}
-                  <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                    {anime.episodes === null
-                      ? "X episodes"
-                      : `${anime.episodes} episodes`}
-                  </p>
-                </SwiperSlide>
-              ))}
+              {animeListTrending
+                .slice(0, 12)
+                .filter(
+                  (anime) =>
+                    anime.title !== null && anime.status !== "NOT_YET_RELEASED"
+                )
+                .map((anime, index) => (
+                  <SwiperSlide key={index}>
+                    <Link to="/anime/$id" params={{ id: anime.id }}>
+                      <div className="relative">
+                        <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
+                          <div className="statusBadge hidden md:block">
+                            {anime.status && (
+                              <Badge
+                                className="text-xs mr-0.5 md:mr-1 cursor-default"
+                                variant="secondary"
+                                key={0}
+                              >
+                                {anime.status}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="meanScoreBadge lg:ml-auto">
+                            {anime.meanScore && (
+                              <Badge
+                                className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default"
+                                variant="secondary"
+                                key={0}
+                              >
+                                <Star className="h-4 w-4 mr-1" />
+                                {anime.meanScore}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <img
+                          className="max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
+                          src={anime.coverImage}
+                          alt={anime.title}
+                        />
+                      </div>
+                      <h2
+                        className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-1"
+                        style={{
+                          whiteSpace: "pre-wrap",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 1,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {anime.title}
+                      </h2>
+                    </Link>
+                    <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                      {anime.episodes === null
+                        ? "X episodes"
+                        : `${anime.episodes} episodes`}
+                    </p>
+                  </SwiperSlide>
+                ))}
             </Swiper>
           )}
         </Swiper>
@@ -642,15 +680,45 @@ const CarouselList = () => {
             {[...animeListTrending]
               .slice(13, 24)
               .sort(() => Math.random() - 0.5)
-              .filter((anime) => anime.title !== null)
+              .filter(
+                (anime) =>
+                  anime.title !== null && anime.status !== "NOT_YET_RELEASED"
+              )
               .map((anime, index) => (
                 <SwiperSlide key={index}>
                   <Link to="/anime/$id" params={{ id: anime.id }}>
-                    <img
-                      className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
-                      src={anime.coverImage}
-                      alt={anime.title}
-                    />
+                    <div className="relative">
+                      <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
+                        <div className="statusBadge hidden md:block">
+                          {anime.status && (
+                            <Badge
+                              className="text-xs mr-0.5 md:mr-1 cursor-default"
+                              variant="secondary"
+                              key={0}
+                            >
+                              {anime.status}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="meanScoreBadge lg:ml-auto">
+                          {anime.meanScore && (
+                            <Badge
+                              className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default"
+                              variant="secondary"
+                              key={0}
+                            >
+                              <Star className="h-4 w-4 mr-1" />
+                              {anime.meanScore}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <img
+                        className="max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
+                        src={anime.coverImage}
+                        alt={anime.title}
+                      />
+                    </div>
                     <h2
                       className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
                       style={{
@@ -664,18 +732,6 @@ const CarouselList = () => {
                       {anime.title}
                     </h2>
                   </Link>
-                  {/* {anime.genres
-                  .split(",")
-                  .slice(0, 2)
-                  .map((genre, index) => (
-                    <Badge
-                      className="text-xs mr-0.5 md:mr-1 cursor-default"
-                      variant="secondary"
-                      key={index}
-                    >
-                      {genre}
-                    </Badge>
-                  ))} */}
                   <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
                     {anime.episodes === null
                       ? "X episodes"
@@ -726,11 +782,38 @@ const CarouselList = () => {
               .map((anime, index) => (
                 <SwiperSlide key={index}>
                   <Link to="/anime/$id" params={{ id: anime.id }}>
-                    <img
-                      className=" max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
-                      src={anime.trailer?.thumbnail || anime.coverImage}
-                      alt={anime.title}
-                    />
+                    <div className="relative">
+                      <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
+                        <div className="statusBadge hidden md:block">
+                          {anime.status && (
+                            <Badge
+                              className="text-xs mr-0.5 md:mr-1 cursor-default"
+                              variant="secondary"
+                              key={0}
+                            >
+                              {anime.status}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="meanScoreBadge lg:ml-auto">
+                          {anime.meanScore && (
+                            <Badge
+                              className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default"
+                              variant="secondary"
+                              key={0}
+                            >
+                              <Star className="h-4 w-4 mr-1" />
+                              {anime.meanScore}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <img
+                        className="max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
+                        src={anime.coverImage}
+                        alt={anime.title}
+                      />
+                    </div>
                     <h2
                       className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
                       style={{
@@ -744,18 +827,6 @@ const CarouselList = () => {
                       {anime.title}
                     </h2>
                   </Link>
-                  {/* {anime.genres
-                  .split(",")
-                  .slice(0, 2)
-                  .map((genre, index) => (
-                    <Badge
-                      className="text-xs mr-0.5 md:mr-1 cursor-default"
-                      variant="secondary"
-                      key={index}
-                    >
-                      {genre}
-                    </Badge>
-                  ))} */}
                   <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
                     {anime.episodes === null
                       ? "X episodes"
