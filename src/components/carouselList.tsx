@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { TrendingUp, Gem, Star, Wand, Clapperboard } from "lucide-react";
+import {
+  TrendingUp,
+  Gem,
+  Star,
+  Wand,
+  Clapperboard,
+  ChevronRight,
+} from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import "swiper/css";
@@ -18,6 +25,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 
 const CarouselList = () => {
   interface Anime {
@@ -183,13 +191,25 @@ const CarouselList = () => {
   return (
     <div className="carousel_list px-8 mt-7 md:px-20 md:mt-10 w-full ">
       <div className="popular">
-        <div className="flex">
-          <h3 className="font-semibold tracking-tight first:mt-0">Popular</h3>
-          <Star className="ml-2 mt-0.5 h-5 w-5" />
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="flex items-center">
+              <h3 className="font-semibold tracking-tight first:mt-0">
+                Popular
+              </h3>
+              <Star className="ml-2 mt-0.5 h-5 w-5" />
+            </div>
+            <p className="mb-3 pr-5 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+              A selection of the most popular anime of all time !
+            </p>
+          </div>
+          <Link to="/popular">
+            <Button className="rounded-full mt-3 md:mt-0" variant="secondary">
+              See All <ChevronRight className="h-4 w-4" />
+            </Button>
+          </Link>
         </div>
-        <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-          A selection of the most popular anime of all time !
-        </p>
+
         {loading && (
           <div>
             <Swiper
@@ -303,13 +323,25 @@ const CarouselList = () => {
         )}
       </div>
       <div className="trending">
-        <div className="flex mt-2 md:mt-8">
-          <h3 className="font-semibold tracking-tight first:mt-0">Trending</h3>
-          <TrendingUp className="ml-2 mt-0.5 h-5 w-5" />
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="flex items-center">
+              <h3 className="font-semibold tracking-tight first:mt-0">
+                Trending
+              </h3>
+              <TrendingUp className="ml-2 mt-0.5 h-5 w-5" />
+            </div>
+            <p className="mb-3 pr-5 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+              A selection of the most trending anime of the moment
+            </p>
+          </div>
+          <Link to="/trending">
+            <Button className="rounded-full mt-3 md:mt-0" variant="secondary">
+              See All <ChevronRight className="h-4 w-4" />
+            </Button>
+          </Link>
         </div>
-        <p className="mb-3 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-          A selection of the most trending anime of the moment
-        </p>
+
         <Swiper
           {...settings}
           modules={[Navigation]}

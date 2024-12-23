@@ -13,6 +13,8 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as TrendingImport } from './routes/trending'
+import { Route as PopularImport } from './routes/popular'
 import { Route as InfoImport } from './routes/info'
 import { Route as IndexImport } from './routes/index'
 import { Route as AnimeIdImport } from './routes/anime.$id'
@@ -27,6 +29,16 @@ const AboutLazyRoute = AboutLazyImport.update({
   path: '/about',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/about.lazy').then((d) => d.Route))
+
+const TrendingRoute = TrendingImport.update({
+  path: '/trending',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const PopularRoute = PopularImport.update({
+  path: '/popular',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const InfoRoute = InfoImport.update({
   path: '/info',
@@ -55,6 +67,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InfoImport
       parentRoute: typeof rootRoute
     }
+    '/popular': {
+      preLoaderRoute: typeof PopularImport
+      parentRoute: typeof rootRoute
+    }
+    '/trending': {
+      preLoaderRoute: typeof TrendingImport
+      parentRoute: typeof rootRoute
+    }
     '/about': {
       preLoaderRoute: typeof AboutLazyImport
       parentRoute: typeof rootRoute
@@ -71,6 +91,8 @@ declare module '@tanstack/react-router' {
 export const routeTree = rootRoute.addChildren([
   IndexRoute,
   InfoRoute,
+  PopularRoute,
+  TrendingRoute,
   AboutLazyRoute,
   AnimeIdRoute,
 ])
