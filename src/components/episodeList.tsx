@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from "react";
+/* eslint-disable react-hooks/rules-of-hooks */
+import { useEffect, useState } from "react";
+import { Skeleton } from "./ui/skeleton";
 
 const episodeList = () => {
   interface Anime {
-    nextAiringEpisode: {
-      airingAt: number;
-      episode: number;
-    } | null;
-    episodes: string;
+    number: string;
     season: string;
     title: string;
     status: string;
@@ -16,7 +14,7 @@ const episodeList = () => {
       id: string;
     };
     id: string;
-    bannerImage: string;
+    image: string;
   }
   const [loading, setLoading] = useState(false);
   const [episodeList, setEpisodeList] = useState<Anime[]>([]);
@@ -32,38 +30,22 @@ const episodeList = () => {
       console.log("Data : ", data);
       const episodeData = data.results.map(
         (anime: {
-          trailer: {
-            thumbnail: string;
-            id: string;
-          };
-          nextAiringEpisode: {
-            airingAt: number;
-            episode: number;
-          };
-          title: { english: string };
-          bannerImage: string;
+          title: string;
+          image: string;
           status: string;
           season: string;
           meanScore: number;
-          episodes: number;
+          number: number;
           id: string;
           animeId: number;
         }) => ({
-          title: anime.title.english,
-          bannerImage: anime.bannerImage,
+          title: anime.title,
+          image: anime.image,
           status: anime.status,
           season: anime.season,
           meanScore: anime.meanScore,
           id: anime.id,
-          episodes: anime.episodes,
-          trailer: {
-            thumbnail: anime.trailer?.thumbnail,
-            id: anime.trailer?.id,
-          },
-          nextAiringEpisode: {
-            airingAt: anime.nextAiringEpisode?.airingAt,
-            episode: anime.nextAiringEpisode?.episode,
-          },
+          number: anime.number,
         })
       );
 
@@ -79,34 +61,90 @@ const episodeList = () => {
     fetchData();
   }, []);
 
-  const settings = {
-    centeredSlides: false,
-    spaceBetween: 30,
-    loop: false,
-    navigation: true,
-    breakpoints: {
-      1200: {
-        slidesPerView: 6,
-        spaceBetween: 25,
-      },
-      1000: {
-        slidesPerView: 5,
-        spaceBetween: 25,
-      },
-      800: {
-        slidesPerView: 4,
-        spaceBetween: 25,
-      },
-      600: {
-        slidesPerView: 4,
-      },
-      299: {
-        slidesPerView: 2,
-        spaceBetween: 10,
-      },
-    },
-  };
-  return <div>episodeList</div>;
+  // const settings = {
+  //   centeredSlides: false,
+  //   spaceBetween: 30,
+  //   loop: false,
+  //   navigation: true,
+  //   breakpoints: {
+  //     1200: {
+  //       slidesPerView: 6,
+  //       spaceBetween: 25,
+  //     },
+  //     1000: {
+  //       slidesPerView: 5,
+  //       spaceBetween: 25,
+  //     },
+  //     800: {
+  //       slidesPerView: 4,
+  //       spaceBetween: 25,
+  //     },
+  //     600: {
+  //       slidesPerView: 4,
+  //     },
+  //     299: {
+  //       slidesPerView: 2,
+  //       spaceBetween: 10,
+  //     },
+  //   },
+  // };
+  return (
+    <div className="popular_list px-8 mt-2 md:px-20 md:mt-2 w-full">
+      <div className="popular">
+        <div className="flex justify-between items-start"></div>
+
+        {loading && episodeList.length === 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {Array.from({ length: 24 }).map((_, index) => (
+              <div key={index}>
+                <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
+                <Skeleton className="h-4 w-36 mb-2" />
+                <div className="flex">
+                  <Skeleton className="h-4 w-16 mr-1" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {episodeList.length > 0 && (
+          <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-5 portrait:landscape:grid-cols-4 portrait:grid-cols-1 gap-4">
+            {episodeList.map((anime, index) => (
+              <div key={index}>
+                <div>
+                  <div className="relative">
+                    <img
+                      className="max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
+                      src={anime.image}
+                      alt={anime.title}
+                    />
+                  </div>
+                  <h2
+                    className="scroll-m-20 mt-2 text-sm font-extrabold tracking-tight lg:text-base"
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 1,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {anime.title}
+                  </h2>
+                </div>
+                <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                  {anime.number === null
+                    ? "X number"
+                    : `Episode ${anime.number} `}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default episodeList;
