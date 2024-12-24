@@ -1,9 +1,8 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dot } from "lucide-react";
-import { Play, ChevronDown, Star } from "lucide-react";
+import { ChevronDown, Star } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -26,34 +25,75 @@ const headerInfo = () => {
     season: string;
     episodes: number;
     description: string;
+    year: number;
+    score: {
+      decimalScore: number;
+    };
   }
   const [isOpen, setIsOpen] = useState(false);
   const [animeInfo, setAnimeInfo] = useState<Anime | null>(null);
-  const [ImageLargeInfo, setImageLargeInfo] = useState();
-  const [titleEnglish, setTitleEnglish] = useState();
-  const [titleRomaji, setTitleRomaji] = useState();
-  const [score, setScore] = useState();
-  const [year, setYear] = useState();
-  const [curentEp, setCurrentEp] = useState();
+
+  const fetchData = async () => {
+    const response = await fetch(
+      `https://api.amvstr.me/api/v2/info/${window.location.pathname.split("/")[2]}`
+    );
+    const data = await response.json();
+    console.log(data);
+    const animeData = data?.results?.map(
+      (anime: {
+        coverImage: {
+          large: string;
+        };
+        trailer: {
+          thumbnail: string;
+          id: string;
+        };
+        nextAiringEpisode: {
+          airingAt: number;
+          episode: number;
+        };
+        title: { english: string };
+        bannerImage: string;
+        status: string;
+        season: string;
+        genres: string[];
+        meanScore: number;
+        episodes: number;
+        id: string;
+        animeId: number;
+        year: number;
+        score: {
+          decimalScore: number;
+        };
+      }) => ({
+        coverImage: anime.coverImage.large,
+        title: anime.title.english,
+        bannerImage: anime.bannerImage,
+        status: anime.status,
+        season: anime.season,
+        year: anime.year,
+        averageScore: anime.score.decimalScore,
+        genres: anime.genres.join(", "),
+        meanScore: anime.meanScore,
+        id: anime.id,
+        episodes: anime.episodes,
+        trailer: {
+          thumbnail: anime.trailer?.thumbnail,
+          id: anime.trailer?.id,
+        },
+        nextAiringEpisode: {
+          airingAt: anime.nextAiringEpisode?.airingAt,
+          episode: anime.nextAiringEpisode?.episode,
+        },
+      })
+    );
+    setAnimeInfo(animeData);
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      const response = await fetch(
-        `https://api.amvstr.me/api/v2/info/${window.location.pathname.split("/")[2]}`
-      );
-      const data = await response.json();
-      console.log(data);
-      setAnimeInfo(data);
-      setImageLargeInfo(data.coverImage.large);
-      setTitleEnglish(data.title.english);
-      setTitleRomaji(data.title.romaji);
-      setScore(data.score.decimalScore);
-      setYear(data.startIn.year);
-      setCurrentEp(data.nextair.episode);
-    };
-
     fetchData();
   }, []);
+
   return (
     <div>
       <div className="header_mobile md:hidden">
@@ -63,7 +103,11 @@ const headerInfo = () => {
           alt=""
         />
         <div className="absolute top-72 left-1/2 transform -translate-x-1/2 md:left-36 md:top-72 -translate-y-1/2">
-          <img className="md:w-auto max-w-7xl" src={ImageLargeInfo} alt="" />
+          <img
+            className="md:w-auto max-w-7xl"
+            src={animeInfo?.coverImage.large}
+            alt=""
+          />
         </div>
         <div className="mt-6 ml-6">
           <h2
@@ -76,7 +120,7 @@ const headerInfo = () => {
             }}
             className="scroll-m-20 mt-1 text-2xl font-extrabold tracking-tight"
           >
-            {titleEnglish}
+            {animeInfo?.title}
           </h2>
           <h3
             style={{
@@ -88,7 +132,7 @@ const headerInfo = () => {
             }}
             className="scroll-m-20 text-sm tracking-tight text-[#a0a0a0]"
           >
-            {titleRomaji}
+            {animeInfo?.title}
           </h3>
           <div
             className="flex"
@@ -119,7 +163,7 @@ const headerInfo = () => {
           <div className="flex ml-7">
             <img
               className="mr-5 portrait:mr-5 portrait:w-46 portrait:max-h-72 rounded-lg"
-              src={ImageLargeInfo}
+              src={animeInfo?.coverImage?.large || ""}
               alt=""
             />
             <div className="ml-2 mb-2">
@@ -133,17 +177,17 @@ const headerInfo = () => {
                 }}
                 className="scroll-m-20 mt-1 text-4xl font-extrabold tracking-tight lg:text-4xl mb-2"
               >
-                {titleEnglish}
+                {animeInfo?.title}
               </h2>
 
               <div className="flex mb-5">
                 <Star />
-                <p className="ml-2">{score}</p>
+                <p className="ml-2">{animeInfo?.score.decimalScore}</p>
               </div>
               <div className="flex">
                 <div className="flex mb-3">
                   <p className="mr-2">Year :</p>
-                  <p> {year}</p>
+                  <p> {animeInfo?.year}</p>
                 </div>
                 <div className="flex mb-3">
                   <p className="mr-2 ml-20">Season :</p>
@@ -152,7 +196,7 @@ const headerInfo = () => {
                 <div className="flex mb-3">
                   <p className="mr-2 ml-20">Episode :</p>
                   <p>
-                    {curentEp === "" ? curentEp : animeInfo?.episodes} /{" "}
+                    {/* {curentEp === "" ? curentEp : animeInfo?.episodes} /{" "} */}
                     {animeInfo?.episodes}
                   </p>
                 </div>
@@ -222,12 +266,6 @@ const headerInfo = () => {
               </Collapsible>
             </div>
           </div>
-        </div>
-        <div className="flex justify-center mt-5">
-          <Button className="text-white w-80">
-            <Play className="mr-2 justify-center  items-center h-4 w-4 " /> Play
-            E1
-          </Button>
         </div>
       </div>
     </div>
