@@ -1,8 +1,15 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useEffect, useState } from "react";
-import { Skeleton } from "./ui/skeleton";
-import { Navigation } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
+// import { Skeleton } from "./ui/skeleton";
+// import { Navigation } from "swiper/modules";
+// import { Swiper, SwiperSlide } from "swiper/react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import "swiper/css";
 import "swiper/css/navigation";
 
@@ -20,18 +27,23 @@ const episodeList = () => {
     id: string;
     image: string;
   }
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   const [episodeList, setEpisodeList] = useState<Anime[]>([]);
 
   const fetchData = async () => {
     try {
-      setLoading(true);
+      // Récupération de idGogo depuis localStorage
+      const idGogo = localStorage.getItem("idGogo");
       const response = await fetch(
         `https://api.amvstr.me/api/v2/episodes/${window.location.pathname.split("/")[2]}`
+      );
+      const responseStreaming = await fetch(
+        `https://api.amvstr.me/api/v2/stream/${idGogo}/1`
       );
       await new Promise((resolve) => setTimeout(resolve, 1800));
       const data = await response.json();
       console.log("Data : ", data);
+      console.log("Streaming : ", responseStreaming);
       const episodeData = data.results.map(
         (anime: {
           title: string;
@@ -57,7 +69,7 @@ const episodeList = () => {
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -65,29 +77,44 @@ const episodeList = () => {
     fetchData();
   }, []);
 
-  const settings = {
-    centeredSlides: false,
-    spaceBetween: 30,
-    loop: false,
-    navigation: true,
-    breakpoints: {
-      1200: {
-        slidesPerView: 4,
-        spaceBetween: 15,
-      },
-      1000: {
-        slidesPerView: 3,
-        spaceBetween: 20,
-      },
-      800: {
-        slidesPerView: 4,
-        spaceBetween: 25,
-      },
-    },
-  };
+  // const settings = {
+  //   centeredSlides: false,
+  //   spaceBetween: 30,
+  //   loop: false,
+  //   navigation: true,
+  //   breakpoints: {
+  //     1200: {
+  //       slidesPerView: 4,
+  //       spaceBetween: 15,
+  //     },
+  //     1000: {
+  //       slidesPerView: 3,
+  //       spaceBetween: 20,
+  //     },
+  //     800: {
+  //       slidesPerView: 4,
+  //       spaceBetween: 25,
+  //     },
+  //   },
+  // };
   return (
     <div className="episode_list px-8 mt-2 md:px-20 md:mt-2 w-full">
-      <div className="episode_mobile md:hidden">
+      <Select>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue
+            placeholder={episodeList.length > 0 ? episodeList[0].number : ""}
+          />
+        </SelectTrigger>
+        <SelectContent>
+          {episodeList.map((anime, index) => (
+            <SelectItem value={anime.number} key={index}>
+              Episode {anime.number}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* <div className="episode_mobile md:hidden">
         <div className="flex justify-between items-start"></div>
 
         {loading && episodeList.length === 0 && (
@@ -180,7 +207,7 @@ const episodeList = () => {
                         <div className="statusBadge hidden md:block"></div>
                       </div>
                       <img
-                        className="md:min-h-40 rounded-lg"
+                        className="md:min-h-48 md:max-h-48 rounded-lg"
                         src={anime.image}
                         alt={anime.title}
                       />
@@ -208,7 +235,7 @@ const episodeList = () => {
             </Swiper>
           )}
         </Swiper>
-      </div>
+      </div> */}
     </div>
   );
 };
