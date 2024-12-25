@@ -1,59 +1,138 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dot } from "lucide-react";
-import { Play, ChevronDown, Star } from "lucide-react";
+import { ChevronDown, Star } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const headerInfo = () => {
   interface Anime {
+    number: string;
     coverImage: {
       large: string;
       medium: string;
       color: string;
     };
     bannerImage: string;
-    title: string;
+    title: {
+      english: string;
+      romaji: string;
+    };
     status: string;
     genres: string[];
-    // meanScore: number;
+    score: {
+      decimalScore: number;
+    };
+    startIn: {
+      year: number;
+    };
+    nextair: {
+      episode: string;
+    };
     id: number;
     season: string;
     episodes: number;
     description: string;
+    id_provider?: {
+      idGogo: string;
+    };
   }
+
+  interface EpisodeItem {
+    title: string;
+    image: string;
+    status: string;
+    season: string;
+    meanScore: number;
+    number: string | number;
+    id: string;
+  }
+
   const [isOpen, setIsOpen] = useState(false);
   const [animeInfo, setAnimeInfo] = useState<Anime | null>(null);
-  const [ImageLargeInfo, setImageLargeInfo] = useState();
-  const [titleEnglish, setTitleEnglish] = useState();
-  const [titleRomaji, setTitleRomaji] = useState();
-  const [score, setScore] = useState();
-  const [year, setYear] = useState();
-  const [curentEp, setCurrentEp] = useState();
+  const [episodeList, setEpisodeList] = useState<EpisodeItem[]>([]);
+  const [streamingUrl, setStreamingUrl] = useState<string>("");
+  const [selectedEpisode, setSelectedEpisode] = useState<string>("1");
+  const [availablePlayers, setAvailablePlayers] = useState<
+    Array<{ name: string; iframe: string }>
+  >([]);
+  const [selectedPlayer, setSelectedPlayer] = useState<string>("0");
+
+  const fetchStreamingData = async (episodeNumber: string) => {
+    try {
+      const idGogo = localStorage.getItem("idGogo");
+      console.log("Fetching episode:", episodeNumber, "with idGogo:", idGogo);
+
+      const responseStreaming = await fetch(
+        `https://api.amvstr.me/api/v2/stream/${idGogo}/${episodeNumber}`
+      );
+      const dataStreaming = await responseStreaming.json();
+      console.log("Streaming data received:", dataStreaming);
+
+      if (dataStreaming.iframe && dataStreaming.iframe.length > 0) {
+        setAvailablePlayers(dataStreaming.iframe);
+        setStreamingUrl(dataStreaming.iframe[0].iframe);
+      }
+    } catch (error) {
+      console.error("Error fetching streaming data:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await fetch(
-        `https://api.amvstr.me/api/v2/info/${window.location.pathname.split("/")[2]}`
-      );
-      const data = await response.json();
-      console.log(data);
-      setAnimeInfo(data);
-      setImageLargeInfo(data.coverImage.large);
-      setTitleEnglish(data.title.english);
-      setTitleRomaji(data.title.romaji);
-      setScore(data.score.decimalScore);
-      setYear(data.startIn.year);
-      setCurrentEp(data.nextair.episode);
+      try {
+        const animeResponse = await fetch(
+          `https://api.amvstr.me/api/v2/info/${window.location.pathname.split("/")[2]}`
+        );
+        const animeData = await animeResponse.json();
+        setAnimeInfo(animeData);
+
+        // Stockage de l'idGogo
+        if (animeData.id_provider && animeData.id_provider.idGogo) {
+          localStorage.setItem("idGogo", animeData.id_provider.idGogo);
+        }
+
+        // Récupération des épisodes
+        const episodesResponse = await fetch(
+          `https://api.amvstr.me/api/v2/episodes/${window.location.pathname.split("/")[2]}`
+        );
+        const episodesData = await episodesResponse.json();
+
+        if (episodesData.results) {
+          const episodeData = episodesData.results.map((episode: any) => ({
+            title: episode.title,
+            image: episode.image,
+            status: episode.status,
+            season: episode.season,
+            meanScore: episode.meanScore,
+            id: episode.id,
+            number: episode.number?.toString() || "1",
+          }));
+          setEpisodeList(episodeData);
+        }
+
+        // Charger le premier épisode
+        await fetchStreamingData("1");
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
     };
 
     fetchData();
   }, []);
+
   return (
     <div>
       <div className="header_mobile md:hidden">
@@ -63,7 +142,11 @@ const headerInfo = () => {
           alt=""
         />
         <div className="absolute top-72 left-1/2 transform -translate-x-1/2 md:left-36 md:top-72 -translate-y-1/2">
-          <img className="md:w-auto max-w-7xl" src={ImageLargeInfo} alt="" />
+          <img
+            className="md:w-auto max-w-7xl"
+            src={animeInfo?.coverImage.large}
+            alt=""
+          />
         </div>
         <div className="mt-6 ml-6">
           <h2
@@ -76,7 +159,7 @@ const headerInfo = () => {
             }}
             className="scroll-m-20 mt-1 text-2xl font-extrabold tracking-tight"
           >
-            {titleEnglish}
+            {animeInfo?.title.english}
           </h2>
           <h3
             style={{
@@ -88,7 +171,7 @@ const headerInfo = () => {
             }}
             className="scroll-m-20 text-sm tracking-tight text-[#a0a0a0]"
           >
-            {titleRomaji}
+            {animeInfo?.title.romaji}
           </h3>
           <div
             className="flex"
@@ -119,7 +202,7 @@ const headerInfo = () => {
           <div className="flex ml-7">
             <img
               className="mr-5 portrait:mr-5 portrait:w-46 portrait:max-h-72 rounded-lg"
-              src={ImageLargeInfo}
+              src={animeInfo?.coverImage.large}
               alt=""
             />
             <div className="ml-2 mb-2">
@@ -133,17 +216,17 @@ const headerInfo = () => {
                 }}
                 className="scroll-m-20 mt-1 text-4xl font-extrabold tracking-tight lg:text-4xl mb-2"
               >
-                {titleEnglish}
+                {animeInfo?.title.english}
               </h2>
 
               <div className="flex mb-5">
                 <Star />
-                <p className="ml-2">{score}</p>
+                <p className="ml-2">{animeInfo?.score.decimalScore}</p>
               </div>
               <div className="flex">
                 <div className="flex mb-3">
                   <p className="mr-2">Year :</p>
-                  <p> {year}</p>
+                  <p> {animeInfo?.startIn.year}</p>
                 </div>
                 <div className="flex mb-3">
                   <p className="mr-2 ml-20">Season :</p>
@@ -152,8 +235,10 @@ const headerInfo = () => {
                 <div className="flex mb-3">
                   <p className="mr-2 ml-20">Episode :</p>
                   <p>
-                    {curentEp === "" ? curentEp : animeInfo?.episodes} /{" "}
-                    {animeInfo?.episodes}
+                    {animeInfo?.nextair?.episode === ""
+                      ? animeInfo?.episodes
+                      : animeInfo?.nextair?.episode}{" "}
+                    / {animeInfo?.episodes}
                   </p>
                 </div>
                 <div className="flex">
@@ -223,13 +308,60 @@ const headerInfo = () => {
             </div>
           </div>
         </div>
-        <div className="flex justify-center mt-5">
-          <Button className="text-white w-80">
-            <Play className="mr-2 justify-center  items-center h-4 w-4 " /> Play
-            E1
-          </Button>
+      </div>
+      <div className="flex mt-5 ml-5">
+        <Select
+          defaultValue="1"
+          onValueChange={(value) => {
+            console.log("Selected episode:", value);
+            setSelectedEpisode(value);
+            fetchStreamingData(value);
+          }}
+        >
+          <SelectTrigger className="w-[120px] md:w-[180px]">
+            <SelectValue placeholder={`Episode ${selectedEpisode}`} />
+          </SelectTrigger>
+          <SelectContent>
+            {episodeList.map((anime, index) => (
+              <SelectItem value={anime.number.toString()} key={index}>
+                Episode {anime.number}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="ml-2">
+          <Select
+            value={selectedPlayer}
+            onValueChange={(value) => {
+              setSelectedPlayer(value);
+              setStreamingUrl(availablePlayers[parseInt(value)].iframe);
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Lecteur" />
+            </SelectTrigger>
+            <SelectContent>
+              {availablePlayers.map((player, index) => (
+                <SelectItem key={index} value={index.toString()}>
+                  Lecteur {player.name || index + 1}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
+
+      {streamingUrl && (
+        <div className="mt-7 aspect-video pb-8 px-8">
+          <iframe
+            key={streamingUrl}
+            src={streamingUrl}
+            className="w-full h-full"
+            allowFullScreen
+            allow="fullscreen"
+          ></iframe>
+        </div>
+      )}
     </div>
   );
 };
