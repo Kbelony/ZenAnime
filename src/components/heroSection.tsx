@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Shuffle, Tv, RefreshCw, Library } from "lucide-react";
+import { Tv, RefreshCw, Library } from "lucide-react";
+import SearchBar from "./searchBar";
 
 const heroSection = () => {
   return (
@@ -18,9 +18,7 @@ const heroSection = () => {
           Lorem ipsum dolor sit, amet consectetur adipisicing elit. Maiores, ex
           necessitatibus. Nihil facilis atque eaque voluptate nam quis sapiente
         </p>
-        <Button className="rounded-full" variant="secondary">
-          <Shuffle className="mr-2 h-4 w-4" /> Recommendation
-        </Button>
+        <SearchBar />
         <div className="icon mt-6 flex justify-center text-xs md:text-base	">
           <div className="grid content-center grid-flow-col">
             <div className="flex mr-4 ml-6 md:ml-20 md:mr-10">
