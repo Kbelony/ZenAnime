@@ -3,6 +3,7 @@ import Logo from "../assets/img/Logo.svg";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ModeToggle } from "../components/mode-toggle";
 import "../assets/style/style.scss";
+import SearchBar from "../components/searchBar";
 
 export const Route = createRootRoute({
   component: () => (
@@ -24,7 +25,12 @@ export const Route = createRootRoute({
                 </h4>
               </div>
             </Link>
-            <div className="justify-self-end">
+            <div className="justify-self-end flex">
+              <div
+                className={`md:w-auto mr-2 md:mr-4 ${location.pathname === "/" ? "hidden" : ""}`}
+              >
+                <SearchBar />
+              </div>
               <ModeToggle />
             </div>
           </nav>
