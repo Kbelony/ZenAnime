@@ -100,7 +100,7 @@ export default function SearchBar() {
               {results.map((anime) => (
                 <li
                   key={anime.id}
-                  className="hover:bg-slate-100 dark:hover:bg-slate-900"
+                  className="hover:bg-slate-100 dark:hover:bg-slate-900 group"
                 >
                   <Link
                     to={`/anime/$id`}
@@ -114,7 +114,7 @@ export default function SearchBar() {
                       className="w-12 h-16 object-cover rounded"
                     />
                     <h2
-                      className="text-sm font-bold text-slate-900 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-900"
+                      className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:dark:text-slate-900"
                       style={{
                         whiteSpace: "pre-wrap",
                         display: "-webkit-box",
