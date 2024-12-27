@@ -1,8 +1,10 @@
+/* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useEffect, useState } from "react";
+import HeaderInfoSkeleton from "./headerInfoSkeleton";
 import { Badge } from "@/components/ui/badge";
-import { ArrowBigDownDash, Star } from "lucide-react";
+import { ArrowBigDownDash, Star, StarHalf } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -11,6 +13,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "./ui/button";
+
+const StarRating = ({ rating }: { rating: number }) => {
+  const fullStars = Math.floor(rating / 2);
+  const hasHalfStar = rating % 2 >= 1;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+  return (
+    <div className="flex items-center">
+      {[...Array(fullStars)].map((_, i) => (
+        <Star
+          key={`full-${i}`}
+          className="w-4 h-4 fill-yellow-400 text-yellow-400"
+        />
+      ))}
+      {hasHalfStar && (
+        <StarHalf className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+      )}
+      {[...Array(emptyStars)].map((_, i) => (
+        <Star key={`empty-${i}`} className="w-4 h-4 text-yellow-400" />
+      ))}
+      <span className="ml-2">{(rating / 2).toFixed(1)}</span>
+    </div>
+  );
+};
 
 const headerInfo = () => {
   interface Anime {
@@ -65,17 +91,15 @@ const headerInfo = () => {
     Array<{ name: string; iframe: string }>
   >([]);
   const [selectedPlayer, setSelectedPlayer] = useState<string>("0");
+  const [loading, setLoading] = useState<boolean>(true);
 
   const fetchStreamingData = async (episodeNumber: string) => {
     try {
       const idGogo = localStorage.getItem("idGogo");
-      // console.log("Fetching episode:", episodeNumber, "with idGogo:", idGogo);
-
       const responseStreaming = await fetch(
         `https://api.amvstr.me/api/v2/stream/${idGogo}/${episodeNumber}`
       );
       const dataStreaming = await responseStreaming.json();
-      // console.log("Streaming data received:", dataStreaming);
 
       if (dataStreaming.iframe && dataStreaming.iframe.length > 0) {
         setAvailablePlayers(dataStreaming.iframe);
@@ -95,19 +119,14 @@ const headerInfo = () => {
         const animeData = await animeResponse.json();
         setAnimeInfo(animeData);
 
-        console.log(animeData);
-
-        // Stockage de l'idGogo
         if (animeData.id_provider && animeData.id_provider.idGogo) {
           localStorage.setItem("idGogo", animeData.id_provider.idGogo);
         }
 
-        // Récupération des épisodes
         const episodesResponse = await fetch(
           `https://api.amvstr.me/api/v2/episodes/${window.location.pathname.split("/")[2]}`
         );
         const episodesData = await episodesResponse.json();
-        console.log(episodesData);
 
         if (episodesData.results) {
           const episodeData = episodesData.results.map((episode: any) => ({
@@ -122,10 +141,11 @@ const headerInfo = () => {
           setEpisodeList(episodeData);
         }
 
-        // Charger le premier épisode
         await fetchStreamingData("1");
       } catch (error) {
         console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -170,6 +190,10 @@ const headerInfo = () => {
       window.removeEventListener("hashchange", handleHashChange);
     };
   }, [animeInfo, episodeList]); // Ajouter les dépendances nécessaires
+
+  if (loading) {
+    return <HeaderInfoSkeleton />;
+  }
 
   return (
     <div>
@@ -243,9 +267,8 @@ const headerInfo = () => {
                 {animeInfo?.title.english}
               </h2>
 
-              <div className="flex">
-                <Star />
-                <p className="ml-2">{animeInfo?.score.decimalScore}</p>
+              <div className="flex items-center">
+                <StarRating rating={animeInfo?.score.decimalScore || 0} />
               </div>
               <div className="flex mt-3">
                 <div className="flex mb-3">
