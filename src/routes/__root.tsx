@@ -26,11 +26,11 @@ export const Route = createRootRoute({
               </div>
             </Link>
             <div className="justify-self-end flex">
-              <div
-                className={`md:w-auto mr-2 md:mr-4 ${location.pathname === "/" ? "hidden" : ""}`}
-              >
-                <SearchBar />
-              </div>
+              {location.pathname !== "/" && (
+                <div className="md:w-auto mr-2 md:mr-4">
+                  <SearchBar />
+                </div>
+              )}
               <ModeToggle />
             </div>
           </nav>
