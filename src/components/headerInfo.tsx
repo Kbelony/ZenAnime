@@ -136,6 +136,45 @@ const headerInfo = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const handleHashChange = () => {
+      const episodeHash = window.location.hash.match(/episode-(\d+)/);
+      let newEpisode = episodeHash ? episodeHash[1] : "1";
+
+      // Vérifier si l'épisode est valide
+      const isValidEpisode = (episode: string): boolean => {
+        const episodeNum = parseInt(episode);
+
+        // Vérifier si c'est un nombre valide et s'il existe dans la liste des épisodes
+        if (isNaN(episodeNum)) return false;
+
+        const maxEpisodes = animeInfo?.nextair?.episode
+          ? parseInt(animeInfo.nextair.episode) - 1
+          : animeInfo?.episodes
+            ? animeInfo.episodes
+            : episodeList?.length || 0;
+
+        return episodeNum > 0 && episodeNum <= maxEpisodes;
+      };
+
+      // Si l'épisode n'est pas valide, rediriger vers l'épisode 1
+      if (!isValidEpisode(newEpisode)) {
+        newEpisode = "1";
+        window.location.hash = "episode-1";
+      }
+
+      setSelectedEpisode(newEpisode);
+      fetchStreamingData(newEpisode);
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+    handleHashChange(); // Exécuter au montage
+
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+    };
+  }, [animeInfo, episodeList]); // Ajouter les dépendances nécessaires
+
   return (
     <div>
       <div className="header_mobile md:hidden">
@@ -146,7 +185,7 @@ const headerInfo = () => {
           onContextMenu={(e) => e.preventDefault()}
           draggable="false"
         />
-        <div className="mt-6 info_mobile ">
+        <div className="mt-6 text-center info_mobile ">
           <div className="flex justify-center meanScoreBadge mb-3">
             <Badge
               className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default"
@@ -284,22 +323,37 @@ const headerInfo = () => {
       </div>
       <div className="flex mt-5 ml-5">
         <Select
-          defaultValue="1"
+          value={selectedEpisode}
           onValueChange={(value) => {
-            console.log("Selected episode:", value);
             setSelectedEpisode(value);
             fetchStreamingData(value);
+            window.location.hash = `episode-${value}`;
           }}
         >
           <SelectTrigger className="w-[120px] md:w-[180px]">
             <SelectValue placeholder={`Episode ${selectedEpisode}`} />
           </SelectTrigger>
           <SelectContent>
-            {episodeList.map((anime, index) => (
-              <SelectItem value={anime.number.toString()} key={index}>
-                Episode {anime.number}
-              </SelectItem>
-            ))}
+            {animeInfo?.nextair?.episode
+              ? Array.from(
+                  { length: parseInt(animeInfo.nextair.episode) - 1 },
+                  (_, index) => (
+                    <SelectItem value={(index + 1).toString()} key={index}>
+                      Episode {index + 1}
+                    </SelectItem>
+                  )
+                )
+              : animeInfo?.episodes
+                ? Array.from({ length: animeInfo.episodes }, (_, index) => (
+                    <SelectItem value={(index + 1).toString()} key={index}>
+                      Episode {index + 1}
+                    </SelectItem>
+                  ))
+                : episodeList.map((anime, index) => (
+                    <SelectItem value={anime.number.toString()} key={index}>
+                      Episode {anime.number}
+                    </SelectItem>
+                  ))}
           </SelectContent>
         </Select>
         <div className="ml-2">
