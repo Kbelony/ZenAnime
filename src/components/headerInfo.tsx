@@ -405,6 +405,11 @@ const headerInfo = () => {
             className="w-full h-full"
             allowFullScreen
             allow="fullscreen"
+            referrerPolicy="no-referrer"
+            loading="lazy"
+            scrolling="no"
+            frameBorder="0"
+            security="restricted"
           ></iframe>
         </div>
       )}
