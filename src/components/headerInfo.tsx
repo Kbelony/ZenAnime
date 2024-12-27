@@ -2,12 +2,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, Star } from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { ArrowBigDownDash, Star } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -15,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "./ui/button";
 
 const headerInfo = () => {
   interface Anime {
@@ -61,7 +57,6 @@ const headerInfo = () => {
     id: string;
   }
 
-  const [isOpen, setIsOpen] = useState(false);
   const [animeInfo, setAnimeInfo] = useState<Anime | null>(null);
   const [episodeList, setEpisodeList] = useState<EpisodeItem[]>([]);
   const [streamingUrl, setStreamingUrl] = useState<string>("");
@@ -74,13 +69,13 @@ const headerInfo = () => {
   const fetchStreamingData = async (episodeNumber: string) => {
     try {
       const idGogo = localStorage.getItem("idGogo");
-      console.log("Fetching episode:", episodeNumber, "with idGogo:", idGogo);
+      // console.log("Fetching episode:", episodeNumber, "with idGogo:", idGogo);
 
       const responseStreaming = await fetch(
         `https://api.amvstr.me/api/v2/stream/${idGogo}/${episodeNumber}`
       );
       const dataStreaming = await responseStreaming.json();
-      console.log("Streaming data received:", dataStreaming);
+      // console.log("Streaming data received:", dataStreaming);
 
       if (dataStreaming.iframe && dataStreaming.iframe.length > 0) {
         setAvailablePlayers(dataStreaming.iframe);
@@ -112,6 +107,7 @@ const headerInfo = () => {
           `https://api.amvstr.me/api/v2/episodes/${window.location.pathname.split("/")[2]}`
         );
         const episodesData = await episodesResponse.json();
+        console.log(episodesData);
 
         if (episodesData.results) {
           const episodeData = episodesData.results.map((episode: any) => ({
@@ -227,9 +223,9 @@ const headerInfo = () => {
           alt=""
         />
         <div className="absolute top-20 p-4">
-          <div className="flex ml-7">
+          <div className="flex ml-7 desktop_img">
             <img
-              className="mr-5 portrait:mr-5 portrait:w-46 portrait:max-h-72 rounded-lg"
+              className="mr-5 portrait:mr-5 portrait:w-46 h-80 rounded-lg"
               src={animeInfo?.coverImage.large}
               alt=""
             />
@@ -242,86 +238,86 @@ const headerInfo = () => {
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
                 }}
-                className="scroll-m-20 mt-1 text-5xl font-extrabold tracking-tight lg:text-4xl mb-2"
+                className="scroll-m-20 mt-1 text-5xl font-extrabold tracking-tight lg:text-4xl mb-4"
               >
                 {animeInfo?.title.english}
               </h2>
 
-              <div className="flex mb-2">
+              <div className="flex">
                 <Star />
                 <p className="ml-2">{animeInfo?.score.decimalScore}</p>
               </div>
-              <div className="flex">
+              <div className="flex mt-3">
                 <div className="flex mb-3">
-                  <p className="mr-2 text-sm mt-0.5">Year:</p>
+                  <p className="mr-1 text-sm mt-0.5  text-slate-600 dark:text-slate-400">
+                    Year:
+                  </p>
                   <p className="text-base">{animeInfo?.startIn.year}</p>
                 </div>
                 <div className="flex mb-3">
-                  <p className="mr-2 ml-20 text-sm mt-0.5">Season:</p>
+                  <p className="mr-1 ml-20 text-sm mt-0.5 text-slate-600 dark:text-slate-400">
+                    Season:
+                  </p>
                   <p className="text-base"> {animeInfo?.season}</p>
                 </div>
                 <div className="flex mb-3">
-                  <p className="mr-2 ml-20 text-sm mt-0.5">Episode :</p>
-                  <p>
-                    {animeInfo?.nextair?.episode === ""
+                  <p className="mr-1 ml-20 text-sm mt-0.5 text-slate-600 dark:text-slate-400">
+                    Episode:
+                  </p>
+                  <p className="text-base">
+                    {animeInfo?.nextair?.episode == null
                       ? animeInfo?.episodes
                       : animeInfo?.nextair?.episode}{" "}
                     / {animeInfo?.episodes}
                   </p>
                 </div>
               </div>
-              <div className="flex mt-2">
-                <p className="mt-0.5 mr-2">Genre :</p>
+              <div className="flex">
+                <p className="mr-1 text-sm mt-1 text-slate-600 dark:text-slate-400">
+                  Genre :
+                </p>
                 {Array.isArray(animeInfo?.genres) &&
                   animeInfo?.genres.map((genre, index) => (
-                    <Badge
-                      className="text-xs py-1.5 mr-3 cursor-default"
-                      variant="secondary"
-                      key={index}
-                    >
-                      {genre}
-                    </Badge>
+                    <p className="text-base mt-0.5 mb-4" key={index}>
+                      {genre},
+                    </p>
                   ))}
               </div>
-              <Collapsible
-                open={isOpen}
-                onOpenChange={setIsOpen}
-                className="space-y-2 items-center"
-              >
-                <p
-                  className="text-sm"
-                  style={{
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                    display: "-webkit-box",
-                  }}
-                  dangerouslySetInnerHTML={{
-                    __html: animeInfo?.description || "",
-                  }}
-                ></p>
-                <div className="flex mt-2 items-center justify-between space-x-4 px-4">
-                  <CollapsibleTrigger asChild>
-                    <div className="flex justify-center items-center mt-2 ml-1">
-                      <ChevronDown className="mx-auto" />
-                      <p className="text-center mx-auto">See more</p>
-                    </div>
-                  </CollapsibleTrigger>
-                </div>
-                <CollapsibleContent className="space-y-2 pr-10">
-                  <p
-                    className="ml-6 text-sm"
-                    dangerouslySetInnerHTML={{
-                      __html: animeInfo?.description || "",
-                    }}
-                  ></p>
-                </CollapsibleContent>
-              </Collapsible>
+              <p
+                className="text-sm overflow-hidden"
+                style={{
+                  display: "-webkit-box",
+                  WebkitLineClamp: 7,
+                  WebkitBoxOrient: "vertical",
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: animeInfo?.description || "",
+                }}
+              ></p>
             </div>
           </div>
         </div>
       </div>
-      <div className="flex mt-5 ml-5">
+      <div className="flex mt-5 ml-5 md:ml-8">
+        <Button
+          className="last_episode bg-blue-500 mr-2"
+          variant="outline"
+          size="icon"
+          onClick={() => {
+            const lastEpisode = animeInfo?.nextair?.episode
+              ? (parseInt(animeInfo.nextair.episode) - 1).toString()
+              : animeInfo?.episodes
+                ? animeInfo.episodes.toString()
+                : episodeList.length > 0
+                  ? episodeList[episodeList.length - 1].number.toString()
+                  : "1";
+            setSelectedEpisode(lastEpisode);
+            fetchStreamingData(lastEpisode);
+            window.location.hash = `episode-${lastEpisode}`;
+          }}
+        >
+          <ArrowBigDownDash />
+        </Button>
         <Select
           value={selectedEpisode}
           onValueChange={(value) => {

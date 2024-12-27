@@ -16,12 +16,12 @@
 }
 .dark .blur_img{
   filter: blur(.5375rem);
-  height: 32rem;
+  height: 25rem;
   opacity: .2;
 }
 .light .blur_img{
   filter: blur(0.5375rem);
-  height: 32.2rem;
+  height: 25rem;
   opacity: 0.8;
 }
 .mainUpcoming{
@@ -118,4 +118,13 @@
   padding: 16px;
   text-align: center;
   color: #718096;
+}
+@media screen and (max-width: 768px) {
+  .justify-self-end {
+    div {
+      .search-container {
+        width: 10rem!important;
+      }
+    }
+  }
 }
