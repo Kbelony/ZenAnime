@@ -8,15 +8,21 @@
         font-family: Satoshi!important;
     }
 }
+.dark .mobile_img{
+    height: 15rem;
+}
+.light .mobile_img{
+    height: 15rem;
+}
 .dark .blur_img{
-    filter: blur(.5375rem);
-    height: 32rem;
-    opacity: .2;
+  filter: blur(.5375rem);
+  height: 32rem;
+  opacity: .2;
 }
 .light .blur_img{
-    filter: blur(0.5375rem);
-    height: 32.2rem;
-    opacity: 0.8;
+  filter: blur(0.5375rem);
+  height: 32.2rem;
+  opacity: 0.8;
 }
 .mainUpcoming{
     img{

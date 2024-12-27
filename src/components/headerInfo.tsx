@@ -2,7 +2,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Dot } from "lucide-react";
 import { ChevronDown, Star } from "lucide-react";
 import {
   Collapsible,
@@ -34,6 +33,7 @@ const headerInfo = () => {
     genres: string[];
     score: {
       decimalScore: number;
+      averageScore: number;
     };
     startIn: {
       year: number;
@@ -44,6 +44,7 @@ const headerInfo = () => {
     id: number;
     season: string;
     episodes: number;
+    meanScore: number;
     description: string;
     id_provider?: {
       idGogo: string;
@@ -99,6 +100,8 @@ const headerInfo = () => {
         const animeData = await animeResponse.json();
         setAnimeInfo(animeData);
 
+        console.log(animeData);
+
         // Stockage de l'idGogo
         if (animeData.id_provider && animeData.id_provider.idGogo) {
           localStorage.setItem("idGogo", animeData.id_provider.idGogo);
@@ -137,59 +140,45 @@ const headerInfo = () => {
     <div>
       <div className="header_mobile md:hidden">
         <img
-          className="object-cover blur_img"
+          className="object-cover mobile_img"
           src={animeInfo?.bannerImage}
           alt=""
+          onContextMenu={(e) => e.preventDefault()}
+          draggable="false"
         />
-        <div className="absolute top-72 left-1/2 transform -translate-x-1/2 md:left-36 md:top-72 -translate-y-1/2">
-          <img
-            className="md:w-auto max-w-7xl"
-            src={animeInfo?.coverImage.large}
-            alt=""
-          />
-        </div>
-        <div className="mt-6 ml-6">
+        <div className="mt-6 info_mobile ">
+          <div className="flex justify-center meanScoreBadge mb-3">
+            <Badge
+              className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default"
+              variant="secondary"
+              key={0}
+            >
+              {animeInfo?.status}
+            </Badge>
+          </div>
+
+          <h1
+            style={{
+              whiteSpace: "pre-wrap",
+              WebkitLineClamp: 1,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+            className="scroll-m-20 mt-1 flex justify-center items-center text-3xl font-extrabold tracking-tight"
+          >
+            {animeInfo?.title.english}
+          </h1>
           <h2
             style={{
               whiteSpace: "pre-wrap",
-              display: "-webkit-box",
               WebkitLineClamp: 1,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
             }}
-            className="scroll-m-20 mt-1 text-2xl font-extrabold tracking-tight"
-          >
-            {animeInfo?.title.english}
-          </h2>
-          <h3
-            style={{
-              whiteSpace: "pre-wrap",
-              display: "-webkit-box",
-              WebkitLineClamp: 1,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-            className="scroll-m-20 text-sm tracking-tight text-[#a0a0a0]"
+            className="scroll-m-20 text-xl flex justify-center items-center tracking-tight text-[#a0a0a0]"
           >
             {animeInfo?.title.romaji}
-          </h3>
-          <div
-            className="flex"
-            style={{ marginLeft: "-0.5rem", marginTop: "-0.7rem" }}
-          >
-            <Dot
-              className="mt-3"
-              style={{
-                color:
-                  animeInfo?.status === "RELEASING" ? "#28FC06" : "#FF6C00",
-              }}
-            />
-            <p className="scroll-m-20 mt-4 text-xs tracking-tight">
-              {animeInfo?.status === "RELEASING"
-                ? "Production in progress"
-                : "Production finish"}
-            </p>
-          </div>
+          </h2>
         </div>
       </div>
       <div className="header_desktop hidden md:block">
@@ -214,47 +203,31 @@ const headerInfo = () => {
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
                 }}
-                className="scroll-m-20 mt-1 text-4xl font-extrabold tracking-tight lg:text-4xl mb-2"
+                className="scroll-m-20 mt-1 text-5xl font-extrabold tracking-tight lg:text-4xl mb-2"
               >
                 {animeInfo?.title.english}
               </h2>
 
-              <div className="flex mb-5">
+              <div className="flex mb-2">
                 <Star />
                 <p className="ml-2">{animeInfo?.score.decimalScore}</p>
               </div>
               <div className="flex">
                 <div className="flex mb-3">
-                  <p className="mr-2">Year :</p>
-                  <p> {animeInfo?.startIn.year}</p>
+                  <p className="mr-2 text-sm mt-0.5">Year:</p>
+                  <p className="text-base">{animeInfo?.startIn.year}</p>
                 </div>
                 <div className="flex mb-3">
-                  <p className="mr-2 ml-20">Season :</p>
-                  <p> {animeInfo?.season}</p>
+                  <p className="mr-2 ml-20 text-sm mt-0.5">Season:</p>
+                  <p className="text-base"> {animeInfo?.season}</p>
                 </div>
                 <div className="flex mb-3">
-                  <p className="mr-2 ml-20">Episode :</p>
+                  <p className="mr-2 ml-20 text-sm mt-0.5">Episode :</p>
                   <p>
                     {animeInfo?.nextair?.episode === ""
                       ? animeInfo?.episodes
                       : animeInfo?.nextair?.episode}{" "}
                     / {animeInfo?.episodes}
-                  </p>
-                </div>
-                <div className="flex">
-                  <Dot
-                    className="mt-3"
-                    style={{
-                      color:
-                        animeInfo?.status === "RELEASING"
-                          ? "#28FC06"
-                          : "#FF6C00",
-                    }}
-                  />
-                  <p className="scroll-m-20 mt-4 text-xs tracking-tight">
-                    {animeInfo?.status === "RELEASING"
-                      ? "Production in progress"
-                      : "Production finish"}
                   </p>
                 </div>
               </div>
@@ -352,7 +325,7 @@ const headerInfo = () => {
       </div>
 
       {streamingUrl && (
-        <div className="mt-7 aspect-video pb-8 px-8">
+        <div className="mt-6 aspect-video pb-8 px-5 md:px-8">
           <iframe
             key={streamingUrl}
             src={streamingUrl}
