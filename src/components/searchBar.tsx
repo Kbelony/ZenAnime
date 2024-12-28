@@ -105,7 +105,12 @@ export default function SearchBar() {
                   <Link
                     to={`/anime/$id`}
                     params={{ id: anime.id }}
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      setIsOpen(false);
+                      if (location.pathname.startsWith("/anime/")) {
+                        window.location.href = `/anime/${anime.id}`;
+                      }
+                    }}
                     className="flex items-center p-2 gap-3"
                   >
                     <img
