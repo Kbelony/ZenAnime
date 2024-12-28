@@ -11,6 +11,9 @@ function AnimeDetails() {
   const { id } = Route.useParams();
 
   useEffect(() => {
+    // Défiler vers le haut de la page
+    window.scrollTo(0, 0);
+
     const fetchAnimeInfo = async () => {
       try {
         const response = await axios.get(
