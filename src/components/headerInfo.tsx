@@ -323,7 +323,7 @@ const headerInfo = () => {
       </div>
       <div className="flex mt-5 ml-5 md:ml-8">
         <Button
-          className="last_episode bg-blue-500 mr-2"
+          className="last_episode text-white bg-blue-500 mr-2"
           variant="outline"
           size="icon"
           onClick={() => {
