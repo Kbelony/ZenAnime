@@ -148,16 +148,28 @@ const CarouselList = () => {
     loop: false,
     navigation: true,
     breakpoints: {
+      1980: {
+        slidesPerView: 8,
+        spaceBetween: 25,
+      },
       1200: {
         slidesPerView: 6,
         spaceBetween: 25,
       },
-      1000: {
+      1180: {
         slidesPerView: 5,
-        spaceBetween: 25,
+        spaceBetween: 15,
       },
-      800: {
+      1024: {
         slidesPerView: 4,
+        spaceBetween: 15,
+      },
+      840: {
+        slidesPerView: 4,
+        spaceBetween: 15,
+      },
+      768: {
+        slidesPerView: 3,
         spaceBetween: 25,
       },
       600: {
@@ -292,7 +304,7 @@ const CarouselList = () => {
                           </div>
                         </div>
                         <img
-                          className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
+                          className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
                           src={anime.coverImage}
                           alt={anime.title}
                         />
@@ -411,7 +423,7 @@ const CarouselList = () => {
                           </div>
                         </div>
                         <img
-                          className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
+                          className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
                           src={anime.coverImage}
                           alt={anime.title}
                         />
@@ -749,7 +761,7 @@ const CarouselList = () => {
                         </div>
                       </div>
                       <img
-                        className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
+                        className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
                         src={anime.coverImage}
                         alt={anime.title}
                       />
@@ -846,7 +858,7 @@ const CarouselList = () => {
                         </div>
                       </div>
                       <img
-                        className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
+                        className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
                         src={anime.coverImage}
                         alt={anime.title}
                       />

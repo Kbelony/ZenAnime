@@ -96,7 +96,7 @@ export const trendingList = () => {
         </div>
 
         {loading && animeListTrending.length === 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 portrait:landscape:grid-cols-3 portrait:lg:grid-cols-4 portrait:md:grid-cols-3 portrait:grid-cols-2 gap-4">
             {Array.from({ length: 24 }).map((_, index) => (
               <div key={index}>
                 <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
@@ -111,7 +111,7 @@ export const trendingList = () => {
         )}
 
         {animeListTrending.length > 0 && (
-          <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-5 portrait:landscape:grid-cols-4 portrait:grid-cols-2 gap-4">
+          <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 portrait:landscape:grid-cols-3 portrait:lg:grid-cols-4 portrait:md:grid-cols-3 portrait:grid-cols-2 gap-4">
             {animeListTrending
               .filter((anime) => anime.title !== null)
               .map((anime, index) => (
@@ -136,7 +136,7 @@ export const trendingList = () => {
                         </div>
                       </div>
                       <img
-                        className="max-h-52 md:min-h-60 md:max-h-80 portrait:min-h-10 rounded-lg"
+                        className="w-[148.797px] h-[208px] md:w-[204px] md:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
                         src={anime.coverImage}
                         alt={anime.title}
                       />
@@ -187,7 +187,7 @@ export const trendingList = () => {
                     <button
                       key={pageNumber}
                       onClick={() => handlePageChange(pageNumber)}
-                      className={`px-4 py-23 rounded-md transition-colors ${
+                      className={`px-4 py-2 rounded-md transition-colors ${
                         currentPage === pageNumber
                           ? "bg-blue-500 text-white"
                           : "text-white hover:bg-slate-700"
