@@ -12,7 +12,7 @@ export const popularList = () => {
       airingAt: number;
       episode: number;
     } | null;
-    episodes: string;
+    episodes: number;
     coverImage: string;
     season: string;
     title: string;
@@ -157,7 +157,9 @@ export const popularList = () => {
                   <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
                     {anime.episodes === null
                       ? "X episodes"
-                      : `${anime.episodes} episodes`}
+                      : anime.episodes === 1
+                        ? `Movie`
+                        : `${anime.episodes} episodes`}
                   </p>
                 </div>
               ))}
