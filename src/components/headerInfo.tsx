@@ -113,8 +113,45 @@ const headerInfo = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const animeId = window.location.pathname.split("/")[2];
+
+        // Récupérer le tableau existant ou créer un nouveau
+        const existingAnimes = JSON.parse(
+          localStorage.getItem("watchedAnimes") || "[]"
+        );
+
+        // Vérifier si l'anime existe déjà
+        const animeIndex = existingAnimes.findIndex(
+          (anime: { id: string }) => anime.id === animeId
+        );
+
+        // Créer ou mettre à jour l'entrée
+        const animeEntry = {
+          id: animeId,
+          lastEpisode:
+            animeIndex !== -1 ? existingAnimes[animeIndex].lastEpisode : "1",
+          timestamp: Date.now(),
+        };
+
+        // Mettre à jour ou ajouter l'anime
+        if (animeIndex !== -1) {
+          existingAnimes[animeIndex] = {
+            ...existingAnimes[animeIndex],
+            timestamp: Date.now(),
+          };
+        } else {
+          // Ajouter au début du tableau
+          existingAnimes.unshift(animeEntry);
+        }
+
+        // Limiter à 20 animes maximum
+        const limitedAnimes = existingAnimes.slice(0, 20);
+
+        // Sauvegarder dans localStorage
+        localStorage.setItem("watchedAnimes", JSON.stringify(limitedAnimes));
+
         const animeResponse = await fetch(
-          `https://api.amvstr.me/api/v2/info/${window.location.pathname.split("/")[2]}`
+          `https://api.amvstr.me/api/v2/info/${animeId}`
         );
         const animeData = await animeResponse.json();
         setAnimeInfo(animeData);
@@ -124,7 +161,7 @@ const headerInfo = () => {
         }
 
         const episodesResponse = await fetch(
-          `https://api.amvstr.me/api/v2/episodes/${window.location.pathname.split("/")[2]}`
+          `https://api.amvstr.me/api/v2/episodes/${animeId}`
         );
         const episodesData = await episodesResponse.json();
 
@@ -155,13 +192,25 @@ const headerInfo = () => {
   useEffect(() => {
     const handleHashChange = () => {
       const episodeHash = window.location.hash.match(/episode-(\d+)/);
-      let newEpisode = episodeHash ? episodeHash[1] : "1";
+      const animeId = window.location.pathname.split("/")[2];
+
+      // Récupérer le dernier épisode regardé depuis localStorage
+      const watchedAnimes = JSON.parse(
+        localStorage.getItem("watchedAnimes") || "[]"
+      );
+      const watchedAnime = watchedAnimes.find(
+        (anime: { id: string }) => anime.id === animeId
+      );
+
+      // Si pas de hash dans l'URL, utiliser le dernier épisode regardé ou 1
+      let newEpisode = episodeHash
+        ? episodeHash[1]
+        : watchedAnime?.lastEpisode || "1";
 
       // Vérifier si l'épisode est valide
       const isValidEpisode = (episode: string): boolean => {
         const episodeNum = parseInt(episode);
 
-        // Vérifier si c'est un nombre valide et s'il existe dans la liste des épisodes
         if (isNaN(episodeNum)) return false;
 
         const maxEpisodes = animeInfo?.nextair?.episode
@@ -173,10 +222,13 @@ const headerInfo = () => {
         return episodeNum > 0 && episodeNum <= maxEpisodes;
       };
 
-      // Si l'épisode n'est pas valide, rediriger vers l'épisode 1
       if (!isValidEpisode(newEpisode)) {
-        newEpisode = "1";
-        window.location.hash = "episode-1";
+        newEpisode = watchedAnime?.lastEpisode || "1";
+      }
+
+      // Ne mettre à jour le hash que si nécessaire
+      if (!episodeHash) {
+        window.location.hash = `episode-${newEpisode}`;
       }
 
       setSelectedEpisode(newEpisode);
@@ -184,12 +236,12 @@ const headerInfo = () => {
     };
 
     window.addEventListener("hashchange", handleHashChange);
-    handleHashChange(); // Exécuter au montage
+    handleHashChange();
 
     return () => {
       window.removeEventListener("hashchange", handleHashChange);
     };
-  }, [animeInfo, episodeList]); // Ajouter les dépendances nécessaires
+  }, [animeInfo, episodeList]);
 
   if (loading) {
     return <HeaderInfoSkeleton />;
@@ -334,6 +386,33 @@ const headerInfo = () => {
                 : episodeList.length > 0
                   ? episodeList[episodeList.length - 1].number.toString()
                   : "1";
+
+            // Mettre à jour lastEpisode dans le localStorage et réorganiser
+            const animeId = window.location.pathname.split("/")[2];
+            const watchedAnimes = JSON.parse(
+              localStorage.getItem("watchedAnimes") || "[]"
+            );
+            const animeIndex = watchedAnimes.findIndex(
+              (anime: { id: string }) => anime.id === animeId
+            );
+
+            if (animeIndex !== -1) {
+              // Retirer l'anime de sa position actuelle
+              const updatedAnime = {
+                ...watchedAnimes[animeIndex],
+                lastEpisode: lastEpisode,
+                timestamp: Date.now(),
+              };
+              watchedAnimes.splice(animeIndex, 1);
+              // Le remettre au début du tableau
+              watchedAnimes.unshift(updatedAnime);
+
+              localStorage.setItem(
+                "watchedAnimes",
+                JSON.stringify(watchedAnimes)
+              );
+            }
+
             setSelectedEpisode(lastEpisode);
             fetchStreamingData(lastEpisode);
             window.location.hash = `episode-${lastEpisode}`;
@@ -346,6 +425,33 @@ const headerInfo = () => {
           onValueChange={(value) => {
             setSelectedEpisode(value);
             fetchStreamingData(value);
+
+            // Mettre à jour lastEpisode dans le localStorage et réorganiser
+            const animeId = window.location.pathname.split("/")[2];
+            const watchedAnimes = JSON.parse(
+              localStorage.getItem("watchedAnimes") || "[]"
+            );
+            const animeIndex = watchedAnimes.findIndex(
+              (anime: { id: string }) => anime.id === animeId
+            );
+
+            if (animeIndex !== -1) {
+              // Retirer l'anime de sa position actuelle
+              const updatedAnime = {
+                ...watchedAnimes[animeIndex],
+                lastEpisode: value,
+                timestamp: Date.now(),
+              };
+              watchedAnimes.splice(animeIndex, 1);
+              // Le remettre au début du tableau
+              watchedAnimes.unshift(updatedAnime);
+
+              localStorage.setItem(
+                "watchedAnimes",
+                JSON.stringify(watchedAnimes)
+              );
+            }
+
             window.location.hash = `episode-${value}`;
           }}
         >

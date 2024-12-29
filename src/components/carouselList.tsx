@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import {
   TrendingUp,
@@ -6,6 +7,8 @@ import {
   Wand,
   Clapperboard,
   ChevronRight,
+  StepForward,
+  X,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
@@ -47,13 +50,50 @@ const CarouselList = () => {
     id: string;
     bannerImage: string;
   }
+
+  interface WatchedAnime {
+    id: string;
+    lastEpisode: string;
+    timestamp: number;
+  }
+
   const [loading, setLoading] = useState(false);
+  const [watchedAnimeList, setWatchedAnimeList] = useState<Anime[]>([]);
   const [animeListTrending, setAnimeListTrending] = useState<Anime[]>([]);
   const [animeListPopular, setAnimeListPopular] = useState<Anime[]>([]);
+  const [animatingIds, setAnimatingIds] = useState<Set<string>>(new Set());
+
+  const fetchWatchedAnimes = async () => {
+    try {
+      const watchedAnimes: WatchedAnime[] = JSON.parse(
+        localStorage.getItem("watchedAnimes") || "[]"
+      );
+
+      const watchedAnimesData = await Promise.all(
+        watchedAnimes.map(async (anime) => {
+          const response = await fetch(
+            `https://api.amvstr.me/api/v2/info/${anime.id}`
+          );
+          const data = await response.json();
+          return {
+            ...data,
+            lastEpisode: anime.lastEpisode,
+            timestamp: anime.timestamp,
+          };
+        })
+      );
+
+      console.log("Watched anime data:", watchedAnimesData);
+      setWatchedAnimeList(watchedAnimesData);
+    } catch (error) {
+      console.error("Error fetching watched animes:", error);
+    }
+  };
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      await fetchWatchedAnimes();
       const response_trending = await fetch(
         "https://api.amvstr.me/api/v2/trending?limit=24"
       );
@@ -200,8 +240,167 @@ const CarouselList = () => {
     slidesPerGroup: 2,
   };
 
+  const removeFromWatchlist = async (animeId: string) => {
+    setAnimatingIds((prev) => new Set(prev).add(animeId));
+
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const watchedAnimes = JSON.parse(
+      localStorage.getItem("watchedAnimes") || "[]"
+    );
+    const updatedWatchedAnimes = watchedAnimes.filter(
+      (anime: { id: string }) => anime.id !== animeId
+    );
+    localStorage.setItem("watchedAnimes", JSON.stringify(updatedWatchedAnimes));
+
+    setWatchedAnimeList((prevList) =>
+      prevList.filter((anime) => String(anime.id) !== String(animeId))
+    );
+
+    setAnimatingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(animeId);
+      return next;
+    });
+  };
+
   return (
     <div className="carousel_list px-8 mt-7 md:px-20 md:mt-10 w-full ">
+      {localStorage.getItem("watchedAnimes") &&
+        JSON.parse(localStorage.getItem("watchedAnimes") || "[]").length >
+          0 && (
+          <div className="resume">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="flex items-center">
+                  <h3 className="font-semibold tracking-tight first:mt-0">
+                    Resume
+                  </h3>
+                  <StepForward className="ml-2 mt-0.5 h-5 w-5" />
+                </div>
+                <p className="mb-3 pr-5 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                  Continue watching where you left off!
+                </p>
+              </div>
+            </div>
+
+            {loading && (
+              <div>
+                <Swiper
+                  {...settings}
+                  modules={[Navigation]}
+                  className="swiper-container"
+                >
+                  {Array.from({ length: 12 }).map((_, index) => (
+                    <SwiperSlide key={index}>
+                      <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
+                      <Skeleton className="h-4 w-36 mb-2" />
+                      <div className="flex">
+                        <Skeleton className="h-4 w-16 mr-1" />
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              </div>
+            )}
+            {!loading && watchedAnimeList && (
+              <Swiper
+                {...settings}
+                modules={[Navigation]}
+                className="swiper-container"
+              >
+                {watchedAnimeList.map((anime, index) => {
+                  const watchedAnimes = JSON.parse(
+                    localStorage.getItem("watchedAnimes") || "[]"
+                  );
+                  const watchedAnime = watchedAnimes.find(
+                    (watched: { id: string }) => watched.id === String(anime.id)
+                  );
+
+                  // console.log("ID from API:", anime.id);
+                  // console.log("Watched anime data:", watchedAnime);
+
+                  return (
+                    <SwiperSlide
+                      key={index}
+                      className={`transition-all duration-300 ${
+                        animatingIds.has(String(anime.id))
+                          ? "opacity-0 transform scale-95"
+                          : "opacity-100 transform scale-100"
+                      }`}
+                    >
+                      <Link
+                        to="/anime/$id"
+                        params={{ id: anime.id }}
+                        hash={`episode${watchedAnime?.lastEpisode || "1"}`}
+                      >
+                        <div className="relative overflow-hidden rounded-lg group">
+                          <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
+                            <div className="statusBadge flex justify-between w-full">
+                              {anime.status && (
+                                <Badge
+                                  className="text-xs mr-0.5 md:mr-1 cursor-default h-6 flex items-center"
+                                  variant="secondary"
+                                  key={0}
+                                >
+                                  {anime.status}
+                                </Badge>
+                              )}
+                              <Button
+                                variant="outline"
+                                className="mr-2"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  removeFromWatchlist(String(anime.id));
+                                }}
+                              >
+                                <X />
+                              </Button>
+                            </div>
+                            {/* <div className="meanScoreBadge lg:ml-auto">
+                          {anime.meanScore && (
+                            <Badge
+                              className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
+                              variant="secondary"
+                              key={0}
+                            >
+                              <Star className="h-4 w-4 mr-1" />
+                              {anime?.score?.decimalScore}
+                            </Badge>
+                          )}
+                        </div> */}
+                          </div>
+                          <img
+                            className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
+                            src={anime.coverImage.large}
+                            alt={anime.title}
+                          />
+                        </div>
+                        <h2
+                          className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base"
+                          style={{
+                            whiteSpace: "pre-wrap",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 1,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {anime.title.english || anime.title.romaji}
+                        </h2>
+                      </Link>
+                      <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                        Épisode {watchedAnime?.lastEpisode || "?"}
+                      </p>
+                    </SwiperSlide>
+                  );
+                })}
+              </Swiper>
+            )}
+          </div>
+        )}
       <div className="popular">
         <div className="flex justify-between items-start">
           <div>
