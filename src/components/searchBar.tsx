@@ -54,7 +54,7 @@ export default function SearchBar() {
         setResults(filteredResults);
         console.log(response.data.results);
       } catch (error) {
-        console.error("Erreur lors de la recherche:", error);
+        console.error("Error during search:", error);
         setResults([]);
       } finally {
         setIsLoading(false);
@@ -75,7 +75,7 @@ export default function SearchBar() {
             setSearchTerm(e.target.value);
             setIsOpen(true);
           }}
-          placeholder="Rechercher un anime..."
+          placeholder="Search an anime..."
           className="search-input pr-8 text-base"
           style={{ fontSize: "14px" }}
         />
@@ -93,7 +93,7 @@ export default function SearchBar() {
         <div className="search-dropdown absolute w-full mt-1 bg-white dark:bg-black rounded-lg shadow-lg border border-slate-200 dark:border-slate-800 z-50">
           {isLoading ? (
             <div className="loading p-4 text-center text-slate-500 dark:text-slate-400">
-              Chargement...
+              Loading...
             </div>
           ) : results.length > 0 ? (
             <ul className="search-results max-h-96 overflow-y-auto">
@@ -136,7 +136,7 @@ export default function SearchBar() {
             </ul>
           ) : (
             <div className="no-results p-4 text-center text-slate-500 dark:text-slate-400">
-              Aucun résultat trouvé
+              No results found
             </div>
           )}
         </div>
