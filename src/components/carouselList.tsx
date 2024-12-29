@@ -30,33 +30,43 @@ import {
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 
+interface Anime {
+  nextAiringEpisode: {
+    airingAt: number;
+    episode: number;
+  } | null;
+  episodes: number;
+  coverImage:
+    | {
+        large?: string;
+        extraLarge?: string;
+      }
+    | string;
+  season: string;
+  title:
+    | {
+        english: string;
+        romaji: string;
+      }
+    | string;
+  status: string;
+  genres: string[];
+  meanScore: number;
+  trailer: {
+    thumbnail: string;
+    id: string;
+  } | null;
+  id: string;
+  bannerImage: string;
+}
+
+interface WatchedAnime {
+  id: string;
+  lastEpisode: string;
+  timestamp: number;
+}
+
 const CarouselList = () => {
-  interface Anime {
-    nextAiringEpisode: {
-      airingAt: number;
-      episode: number;
-    } | null;
-    episodes: number;
-    coverImage: string;
-    season: string;
-    title: string;
-    status: string;
-    genres: string;
-    meanScore: number;
-    trailer: {
-      thumbnail: string;
-      id: string;
-    };
-    id: string;
-    bannerImage: string;
-  }
-
-  interface WatchedAnime {
-    id: string;
-    lastEpisode: string;
-    timestamp: number;
-  }
-
   const [loading, setLoading] = useState(false);
   const [watchedAnimeList, setWatchedAnimeList] = useState<Anime[]>([]);
   const [animeListTrending, setAnimeListTrending] = useState<Anime[]>([]);
@@ -374,8 +384,16 @@ const CarouselList = () => {
                           </div>
                           <img
                             className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
-                            src={anime.coverImage.large}
-                            alt={anime.title}
+                            src={
+                              typeof anime.coverImage === "string"
+                                ? anime.coverImage
+                                : anime.coverImage.large
+                            }
+                            alt={
+                              typeof anime.title === "string"
+                                ? anime.title
+                                : anime.title.english || anime.title.romaji
+                            }
                           />
                         </div>
                         <h2
@@ -388,7 +406,9 @@ const CarouselList = () => {
                             overflow: "hidden",
                           }}
                         >
-                          {anime.title.english || anime.title.romaji}
+                          {typeof anime.title === "string"
+                            ? anime.title
+                            : anime.title.english || anime.title.romaji}
                         </h2>
                       </Link>
                       <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -504,8 +524,17 @@ const CarouselList = () => {
                         </div>
                         <img
                           className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
-                          src={anime.coverImage}
-                          alt={anime.title}
+                          src={
+                            typeof anime.coverImage === "string"
+                              ? anime.coverImage
+                              : anime.coverImage.extraLarge ||
+                                anime.coverImage.large
+                          }
+                          alt={
+                            typeof anime.title === "string"
+                              ? anime.title
+                              : anime.title.english || anime.title.romaji
+                          }
                         />
                       </div>
                       <h2
@@ -518,7 +547,9 @@ const CarouselList = () => {
                           overflow: "hidden",
                         }}
                       >
-                        {anime.title}
+                        {typeof anime.title === "string"
+                          ? anime.title
+                          : anime.title.english || anime.title.romaji}
                       </h2>
                     </Link>
                     <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -623,8 +654,17 @@ const CarouselList = () => {
                         </div>
                         <img
                           className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
-                          src={anime.coverImage}
-                          alt={anime.title}
+                          src={
+                            typeof anime.coverImage === "string"
+                              ? anime.coverImage
+                              : anime.coverImage.extraLarge ||
+                                anime.coverImage.large
+                          }
+                          alt={
+                            typeof anime.title === "string"
+                              ? anime.title
+                              : anime.title.english || anime.title.romaji
+                          }
                         />
                       </div>
                       <h2
@@ -637,7 +677,9 @@ const CarouselList = () => {
                           overflow: "hidden",
                         }}
                       >
-                        {anime.title}
+                        {typeof anime.title === "string"
+                          ? anime.title
+                          : anime.title.english || anime.title.romaji}
                       </h2>
                     </Link>
                     <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -698,8 +740,12 @@ const CarouselList = () => {
                       <a>
                         <img
                           className="w-full landscape:w-svw rounded-lg"
-                          src={anime.trailer.thumbnail}
-                          alt={anime.title}
+                          src={anime.trailer?.thumbnail}
+                          alt={
+                            typeof anime.title === "string"
+                              ? anime.title
+                              : anime.title.english
+                          }
                         />
                         <h2
                           className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
@@ -711,7 +757,10 @@ const CarouselList = () => {
                             overflow: "hidden",
                           }}
                         >
-                          {anime.title} Trailer
+                          {typeof anime.title === "string"
+                            ? anime.title
+                            : anime.title.english}{" "}
+                          Trailer
                         </h2>
                         <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
                           Season : {anime.season}
@@ -733,7 +782,7 @@ const CarouselList = () => {
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction asChild>
                           <a
-                            href={`https://www.youtube.com/watch?v=${anime.trailer.id}`}
+                            href={`https://www.youtube.com/watch?v=${anime.trailer?.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
@@ -798,7 +847,11 @@ const CarouselList = () => {
                       <img
                         className=" max-h-52 min-h-80 rounded-lg object-cover"
                         src={anime.bannerImage}
-                        alt={anime.title}
+                        alt={
+                          typeof anime.title === "string"
+                            ? anime.title
+                            : anime.title.english || anime.title.romaji
+                        }
                       />
                     </Link>
                   </div>
@@ -837,7 +890,11 @@ const CarouselList = () => {
                       <img
                         className="w-64 max-h-52 min-h-36 rounded-lg object-cover"
                         src={anime.bannerImage}
-                        alt={anime.title}
+                        alt={
+                          typeof anime.title === "string"
+                            ? anime.title
+                            : anime.title.english || anime.title.romaji
+                        }
                       />
                       <div className="block ml-3">
                         <h2
@@ -850,7 +907,9 @@ const CarouselList = () => {
                             overflow: "hidden",
                           }}
                         >
-                          {anime.title}
+                          {typeof anime.title === "string"
+                            ? anime.title
+                            : anime.title.english || anime.title.romaji}
                         </h2>
                         <div className="flex">
                           <p className="mb-3 mt-1 pr-5 text-xs md:text-sm">
@@ -961,8 +1020,17 @@ const CarouselList = () => {
                       </div>
                       <img
                         className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
-                        src={anime.coverImage}
-                        alt={anime.title}
+                        src={
+                          typeof anime.coverImage === "string"
+                            ? anime.coverImage
+                            : anime.coverImage?.large ||
+                              anime.coverImage?.extraLarge
+                        }
+                        alt={
+                          typeof anime.title === "string"
+                            ? anime.title
+                            : anime.title?.english || anime.title?.romaji
+                        }
                       />
                     </div>
                     <h2
@@ -975,7 +1043,9 @@ const CarouselList = () => {
                         overflow: "hidden",
                       }}
                     >
-                      {anime.title}
+                      {typeof anime.title === "string"
+                        ? anime.title
+                        : anime.title?.english || anime.title?.romaji}
                     </h2>
                   </Link>
                   <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -1058,8 +1128,17 @@ const CarouselList = () => {
                       </div>
                       <img
                         className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
-                        src={anime.coverImage}
-                        alt={anime.title}
+                        src={
+                          typeof anime.coverImage === "string"
+                            ? anime.coverImage
+                            : anime.coverImage.large ||
+                              anime.coverImage.extraLarge
+                        }
+                        alt={
+                          typeof anime.title === "string"
+                            ? anime.title
+                            : anime.title.english || anime.title.romaji
+                        }
                       />
                     </div>
                     <h2
@@ -1072,7 +1151,9 @@ const CarouselList = () => {
                         overflow: "hidden",
                       }}
                     >
-                      {anime.title}
+                      {typeof anime.title === "string"
+                        ? anime.title
+                        : anime.title.english || anime.title.romaji}
                     </h2>
                   </Link>
                   <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
