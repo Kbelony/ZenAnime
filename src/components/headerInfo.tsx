@@ -158,6 +158,8 @@ const headerInfo = () => {
 
         if (animeData.id_provider && animeData.id_provider.idGogo) {
           localStorage.setItem("idGogo", animeData.id_provider.idGogo);
+        } else {
+          localStorage.setItem("idGogo", "undefined");
         }
 
         const episodesResponse = await fetch(
@@ -422,9 +424,9 @@ const headerInfo = () => {
         </Button>
         <Select
           value={selectedEpisode}
-          onValueChange={(value) => {
+          onValueChange={async (value) => {
             setSelectedEpisode(value);
-            fetchStreamingData(value);
+            await fetchStreamingData(value);
 
             // Mettre à jour lastEpisode dans le localStorage et réorganiser
             const animeId = window.location.pathname.split("/")[2];
@@ -436,14 +438,12 @@ const headerInfo = () => {
             );
 
             if (animeIndex !== -1) {
-              // Retirer l'anime de sa position actuelle
               const updatedAnime = {
                 ...watchedAnimes[animeIndex],
                 lastEpisode: value,
                 timestamp: Date.now(),
               };
               watchedAnimes.splice(animeIndex, 1);
-              // Le remettre au début du tableau
               watchedAnimes.unshift(updatedAnime);
 
               localStorage.setItem(
@@ -503,7 +503,7 @@ const headerInfo = () => {
         </div>
       </div>
 
-      {streamingUrl && (
+      {streamingUrl && localStorage.getItem("idGogo") !== "undefined" ? (
         <div className="mt-6 aspect-video pb-8 px-5 md:px-8">
           <iframe
             key={streamingUrl}
@@ -517,6 +517,14 @@ const headerInfo = () => {
             frameBorder="0"
             security="restricted"
           ></iframe>
+        </div>
+      ) : (
+        <div className="mt-6 aspect-video pb-8 px-5 md:px-8">
+          <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <p className="text-lg text-gray-500">
+              Content currently unavailable
+            </p>
+          </div>
         </div>
       )}
     </div>
