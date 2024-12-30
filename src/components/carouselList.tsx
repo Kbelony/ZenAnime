@@ -11,6 +11,7 @@ import {
   StepForward,
   X,
   Play,
+  ChevronLeft,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
@@ -508,8 +509,28 @@ const CarouselList = () => {
               A selection of the most popular anime of all time !
             </p>
           </div>
+          <div className="hidden md:flex ml-auto gap-3 p-4 rounded-lg">
+            <Button
+              variant="outline"
+              // Start of Selection
+              // Start of Selection
+              size="icon"
+              className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+              // onClick={() => Swiper.current?.slideNext()}
+            >
+              <ChevronLeft className="h-4 w-4 text-gray-400 hover:text-blue-500" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full border-blue-500 bg-transparent hover:bg-transparent shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+              // onClick={() => Swiper.current.slideNext()}
+            >
+              <ChevronRight className="h-4 w-4 text-blue-500" />
+            </Button>
+          </div>
           <Link to="/popular">
-            <Button className="rounded-full mt-3 md:mt-0" variant="secondary">
+            <Button className="rounded-full mt-3 md:mt-4" variant="secondary">
               See All <ChevronRight className="h-4 w-4" />
             </Button>
           </Link>
@@ -890,7 +911,7 @@ const CarouselList = () => {
                   <Link
                     to="/anime/$id"
                     params={{ id: anime.id }}
-                    hash={`episode-${anime.nextAiringEpisode?.episode ? `episode-${anime.nextAiringEpisode.episode - 1}` : ""}`}
+                    hash={`episode-${anime.nextAiringEpisode?.episode ? anime.nextAiringEpisode.episode - 1 : ""}`}
                   >
                     <div className="flex w-full justify-end">
                       <Button
