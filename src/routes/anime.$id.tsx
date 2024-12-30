@@ -1,6 +1,6 @@
 import HeaderInfo from "@/components/headerInfo";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 export const Route = createFileRoute("/anime/$id")({
@@ -9,34 +9,50 @@ export const Route = createFileRoute("/anime/$id")({
 
 function AnimeDetails() {
   const { id } = Route.useParams();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Défiler vers le haut de la page
     window.scrollTo(0, 0);
+
+    const controller = new AbortController();
 
     const fetchAnimeInfo = async () => {
       try {
+        const cachedTitle = sessionStorage.getItem(`anime_title_${id}`);
+        if (cachedTitle) {
+          document.title = cachedTitle;
+          setIsLoading(false);
+          return;
+        }
+
         const response = await axios.get(
-          `https://api.amvstr.me/api/v2/info/${id}`
+          `https://api.amvstr.me/api/v2/info/${id}`,
+          { signal: controller.signal }
         );
         const title = response.data.title?.english || "Anime Details";
         document.title = title;
+        sessionStorage.setItem(`anime_title_${id}`, title);
       } catch (error) {
+        if (axios.isCancel(error)) return;
         console.error(
           "Erreur lors de la récupération des informations:",
           error
         );
         document.title = "Anime Details";
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchAnimeInfo();
 
-    // Restaurer le titre original lors du démontage du composant
     return () => {
+      controller.abort();
       document.title = "ZenAnime";
     };
   }, [id]);
+
+  if (isLoading) return null;
 
   return (
     <div>

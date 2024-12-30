@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/rules-of-hooks */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import HeaderInfoSkeleton from "./headerInfoSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { ArrowBigDownDash, Star, StarHalf } from "lucide-react";
@@ -15,30 +17,38 @@ import {
 import { Button } from "./ui/button";
 
 const StarRating = ({ rating }: { rating: number }) => {
-  const fullStars = Math.floor(rating / 2);
-  const hasHalfStar = rating % 2 >= 1;
-  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+  const stars = useMemo(() => {
+    const fullStars = Math.floor(rating / 2);
+    const hasHalfStar = rating % 2 >= 1;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+    return (
+      <>
+        {[...Array(fullStars)].map((_, i) => (
+          <Star
+            key={`full-${i}`}
+            className="w-4 h-4 fill-yellow-400 text-yellow-400"
+          />
+        ))}
+        {hasHalfStar && (
+          <StarHalf className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+        )}
+        {[...Array(emptyStars)].map((_, i) => (
+          <Star key={`empty-${i}`} className="w-4 h-4 text-yellow-400" />
+        ))}
+      </>
+    );
+  }, [rating]);
 
   return (
     <div className="flex items-center">
-      {[...Array(fullStars)].map((_, i) => (
-        <Star
-          key={`full-${i}`}
-          className="w-4 h-4 fill-yellow-400 text-yellow-400"
-        />
-      ))}
-      {hasHalfStar && (
-        <StarHalf className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-      )}
-      {[...Array(emptyStars)].map((_, i) => (
-        <Star key={`empty-${i}`} className="w-4 h-4 text-yellow-400" />
-      ))}
+      {stars}
       <span className="ml-2">{(rating / 2).toFixed(1)}</span>
     </div>
   );
 };
 
-const headerInfo = () => {
+const HeaderInfo = () => {
   interface Anime {
     number: string;
     coverImage: {
@@ -93,9 +103,19 @@ const headerInfo = () => {
   const [selectedPlayer, setSelectedPlayer] = useState<string>("0");
   const [loading, setLoading] = useState<boolean>(true);
 
-  const fetchStreamingData = async (episodeNumber: string) => {
+  const fetchStreamingData = useCallback(async (episodeNumber: string) => {
     try {
       const idGogo = localStorage.getItem("idGogo");
+      const cacheKey = `streaming_${idGogo}_${episodeNumber}`;
+      const cachedData = sessionStorage.getItem(cacheKey);
+
+      if (cachedData) {
+        const data = JSON.parse(cachedData);
+        setAvailablePlayers(data.iframe);
+        setStreamingUrl(data.iframe[0].iframe);
+        return;
+      }
+
       const responseStreaming = await fetch(
         `https://api.amvstr.me/api/v2/stream/${idGogo}/${episodeNumber}`
       );
@@ -104,68 +124,54 @@ const headerInfo = () => {
       if (dataStreaming.iframe && dataStreaming.iframe.length > 0) {
         setAvailablePlayers(dataStreaming.iframe);
         setStreamingUrl(dataStreaming.iframe[0].iframe);
+        sessionStorage.setItem(cacheKey, JSON.stringify(dataStreaming));
       }
     } catch (error) {
       console.error("Error fetching streaming data:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchData = async () => {
       try {
         const animeId = window.location.pathname.split("/")[2];
+        const cacheKey = `anime_data_${animeId}`;
+        const cachedData = sessionStorage.getItem(cacheKey);
 
-        // Récupérer le tableau existant ou créer un nouveau
-        const existingAnimes = JSON.parse(
-          localStorage.getItem("watchedAnimes") || "[]"
-        );
-
-        // Vérifier si l'anime existe déjà
-        const animeIndex = existingAnimes.findIndex(
-          (anime: { id: string }) => anime.id === animeId
-        );
-
-        // Créer ou mettre à jour l'entrée
-        const animeEntry = {
-          id: animeId,
-          lastEpisode:
-            animeIndex !== -1 ? existingAnimes[animeIndex].lastEpisode : "1",
-          timestamp: Date.now(),
-        };
-
-        // Mettre à jour ou ajouter l'anime
-        if (animeIndex !== -1) {
-          existingAnimes[animeIndex] = {
-            ...existingAnimes[animeIndex],
-            timestamp: Date.now(),
-          };
-        } else {
-          // Ajouter au début du tableau
-          existingAnimes.unshift(animeEntry);
+        if (cachedData) {
+          const { animeData, episodesData } = JSON.parse(cachedData);
+          setAnimeInfo(animeData);
+          setEpisodeList(episodesData);
+          updateWatchHistory(animeId, animeData);
+          await fetchStreamingData("1");
+          setLoading(false);
+          return;
         }
 
-        // Limiter à 20 animes maximum
-        const limitedAnimes = existingAnimes.slice(0, 20);
+        const [animeResponse, episodesResponse] = await Promise.all([
+          fetch(`https://api.amvstr.me/api/v2/info/${animeId}`, {
+            signal: controller.signal,
+          }),
+          fetch(`https://api.amvstr.me/api/v2/episodes/${animeId}`, {
+            signal: controller.signal,
+          }),
+        ]);
 
-        // Sauvegarder dans localStorage
-        localStorage.setItem("watchedAnimes", JSON.stringify(limitedAnimes));
+        const [animeData, episodesData] = await Promise.all([
+          animeResponse.json(),
+          episodesResponse.json(),
+        ]);
 
-        const animeResponse = await fetch(
-          `https://api.amvstr.me/api/v2/info/${animeId}`
-        );
-        const animeData = await animeResponse.json();
         setAnimeInfo(animeData);
+        updateWatchHistory(animeId, animeData);
 
-        if (animeData.id_provider && animeData.id_provider.idGogo) {
+        if (animeData.id_provider?.idGogo) {
           localStorage.setItem("idGogo", animeData.id_provider.idGogo);
         } else {
           localStorage.setItem("idGogo", "undefined");
         }
-
-        const episodesResponse = await fetch(
-          `https://api.amvstr.me/api/v2/episodes/${animeId}`
-        );
-        const episodesData = await episodesResponse.json();
 
         if (episodesData.results) {
           const episodeData = episodesData.results.map((episode: any) => ({
@@ -180,8 +186,17 @@ const headerInfo = () => {
           setEpisodeList(episodeData);
         }
 
+        sessionStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            animeData,
+            episodesData: episodesData.results,
+          })
+        );
+
         await fetchStreamingData("1");
-      } catch (error) {
+      } catch (error: unknown) {
+        if (error instanceof Error && error.name === "AbortError") return;
         console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
@@ -189,6 +204,36 @@ const headerInfo = () => {
     };
 
     fetchData();
+
+    return () => controller.abort();
+  }, [fetchStreamingData]);
+
+  const updateWatchHistory = useCallback((animeId: string, _animeData: any) => {
+    const existingAnimes = JSON.parse(
+      localStorage.getItem("watchedAnimes") || "[]"
+    );
+    const animeIndex = existingAnimes.findIndex(
+      (anime: { id: string }) => anime.id === animeId
+    );
+
+    const animeEntry = {
+      id: animeId,
+      lastEpisode:
+        animeIndex !== -1 ? existingAnimes[animeIndex].lastEpisode : "1",
+      timestamp: Date.now(),
+    };
+
+    if (animeIndex !== -1) {
+      existingAnimes[animeIndex] = {
+        ...existingAnimes[animeIndex],
+        timestamp: Date.now(),
+      };
+    } else {
+      existingAnimes.unshift(animeEntry);
+    }
+
+    const limitedAnimes = existingAnimes.slice(0, 20);
+    localStorage.setItem("watchedAnimes", JSON.stringify(limitedAnimes));
   }, []);
 
   useEffect(() => {
@@ -531,4 +576,4 @@ const headerInfo = () => {
   );
 };
 
-export default headerInfo;
+export default HeaderInfo;
