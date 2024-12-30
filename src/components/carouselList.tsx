@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   TrendingUp,
   Gem,
@@ -30,34 +31,53 @@ import {
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 
-interface Anime {
-  nextAiringEpisode: {
-    airingAt: number;
-    episode: number;
-  } | null;
-  episodes: number;
-  coverImage:
-    | {
-        large?: string;
-        extraLarge?: string;
-      }
-    | string;
-  season: string;
-  title:
-    | {
-        english: string;
-        romaji: string;
-      }
-    | string;
+interface AnimeApiResponse {
+  coverImage: {
+    extraLarge: string;
+    large?: string;
+  };
+  title: {
+    english: string;
+    romaji?: string;
+  };
   status: string;
   genres: string[];
   meanScore: number;
-  trailer: {
+  episodes: number;
+  id: string;
+  bannerImage?: string;
+  season?: string;
+  trailer?: {
     thumbnail: string;
     id: string;
-  } | null;
+  };
+  nextAiringEpisode?: {
+    airingAt: number;
+    episode: number;
+  };
+}
+
+interface Anime {
+  score: any;
+  coverImage: string | { large?: string; extraLarge?: string };
+  title: string | { english: string; romaji: string };
+  status: string;
+  genres: string;
+  meanScore: number;
+  episodes: number;
   id: string;
-  bannerImage: string;
+  bannerImage?: string;
+  season?: string;
+  trailer?: {
+    thumbnail: string;
+    id: string;
+  };
+  nextAiringEpisode?: {
+    airingAt: number;
+    episode: number;
+  };
+  lastEpisode?: string;
+  timestamp?: number;
 }
 
 interface WatchedAnime {
@@ -67,77 +87,171 @@ interface WatchedAnime {
 }
 
 const CarouselList = () => {
-  const [loading, setLoading] = useState(false);
+  const [sectionsLoading, setSectionsLoading] = useState({
+    watched: true,
+    trending: true,
+    popular: true,
+  });
+  const [error, setError] = useState<string | null>(null);
   const [watchedAnimeList, setWatchedAnimeList] = useState<Anime[]>([]);
   const [animeListTrending, setAnimeListTrending] = useState<Anime[]>([]);
   const [animeListPopular, setAnimeListPopular] = useState<Anime[]>([]);
   const [animatingIds, setAnimatingIds] = useState<Set<string>>(new Set());
 
-  const fetchWatchedAnimes = async () => {
+  const settings = useMemo(
+    () => ({
+      centeredSlides: false,
+      spaceBetween: 30,
+      loop: false,
+      navigation: true,
+      breakpoints: {
+        1980: { slidesPerView: 8, spaceBetween: 25 },
+        1200: { slidesPerView: 6, spaceBetween: 25 },
+        1180: { slidesPerView: 5, spaceBetween: 15 },
+        1024: { slidesPerView: 4, spaceBetween: 15 },
+        840: { slidesPerView: 4, spaceBetween: 15 },
+        768: { slidesPerView: 3, spaceBetween: 25 },
+        600: { slidesPerView: 4 },
+        299: { slidesPerView: 2, spaceBetween: 10 },
+      },
+    }),
+    []
+  );
+
+  const settingsTrailer = useMemo(
+    () => ({
+      centeredSlides: true,
+      spaceBetween: 30,
+      loop: false,
+      navigation: true,
+      slidesPerView: 1,
+    }),
+    []
+  );
+
+  const settingsUpcoming = useMemo(
+    () => ({
+      centeredSlides: false,
+      direction: "vertical" as const,
+      spaceBetween: 20,
+      loop: false,
+      navigation: true,
+      slidesPerView: 2,
+      slidesPerGroup: 2,
+    }),
+    []
+  );
+
+  const fetchWatchedAnimes = useCallback(async () => {
     try {
+      setSectionsLoading((prev) => ({ ...prev, watched: true }));
       const watchedAnimes: WatchedAnime[] = JSON.parse(
         localStorage.getItem("watchedAnimes") || "[]"
       );
 
+      if (watchedAnimes.length === 0) return [];
+
+      const cacheKey = `watched_animes_${watchedAnimes.map((a) => a.id).join("_")}`;
+      const cachedData = sessionStorage.getItem(cacheKey);
+
+      if (cachedData) {
+        const parsedData = JSON.parse(cachedData);
+        setWatchedAnimeList(parsedData);
+        return parsedData;
+      }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+
       const watchedAnimesData = await Promise.all(
         watchedAnimes.map(async (anime) => {
-          const response = await fetch(
-            `https://api.amvstr.me/api/v2/info/${anime.id}`
-          );
-          const data = await response.json();
-          return {
-            ...data,
-            lastEpisode: anime.lastEpisode,
-            timestamp: anime.timestamp,
-          };
+          try {
+            const response = await fetch(
+              `https://api.amvstr.me/api/v2/info/${anime.id}`,
+              { signal: controller.signal }
+            );
+            if (!response.ok)
+              throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            return {
+              ...data,
+              lastEpisode: anime.lastEpisode,
+              timestamp: anime.timestamp,
+            };
+          } catch (error) {
+            console.error(`Erreur pour l'anime ${anime.id}:`, error);
+            return null;
+          }
         })
       );
 
-      console.log("Watched anime data:", watchedAnimesData);
-      setWatchedAnimeList(watchedAnimesData);
-    } catch (error) {
-      console.error("Error fetching watched animes:", error);
-    }
-  };
+      clearTimeout(timeout);
 
-  const fetchData = async () => {
+      const filteredData = watchedAnimesData.filter(Boolean);
+      setWatchedAnimeList(filteredData);
+      sessionStorage.setItem(cacheKey, JSON.stringify(filteredData));
+      return filteredData;
+    } catch (error) {
+      console.error(
+        "Erreur lors de la récupération des animes regardés:",
+        error
+      );
+      setError("Erreur lors du chargement de votre historique");
+      return [];
+    } finally {
+      setSectionsLoading((prev) => ({ ...prev, watched: false }));
+    }
+  }, []);
+
+  const fetchAnimeList = useCallback(async () => {
     try {
-      setLoading(true);
-      await fetchWatchedAnimes();
-      const response_trending = await fetch(
-        "https://api.amvstr.me/api/v2/trending?limit=24"
-      );
-      const response_popular = await fetch(
-        "https://api.amvstr.me/api/v2/popular?limit=24"
-      );
-      await new Promise((resolve) => setTimeout(resolve, 1800));
-      const data_trending = await response_trending.json();
-      const data_popular = await response_popular.json();
-      console.log("Popular : ", data_popular);
-      console.log("Trending : ", data_trending);
+      setSectionsLoading((prev) => ({
+        ...prev,
+        trending: true,
+        popular: true,
+      }));
+      const cacheKey = "anime_lists_data";
+      const cachedData = sessionStorage.getItem(cacheKey);
+
+      if (cachedData) {
+        const { trending, popular } = JSON.parse(cachedData);
+        setAnimeListTrending(trending);
+        setAnimeListPopular(popular);
+        setSectionsLoading((prev) => ({
+          ...prev,
+          trending: false,
+          popular: false,
+        }));
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+
+      const [response_trending, response_popular] = await Promise.all([
+        fetch("https://api.amvstr.me/api/v2/trending?limit=24", {
+          signal: controller.signal,
+        }),
+        fetch("https://api.amvstr.me/api/v2/popular?limit=24", {
+          signal: controller.signal,
+        }),
+      ]);
+
+      clearTimeout(timeout);
+
+      if (!response_trending.ok || !response_popular.ok) {
+        throw new Error(
+          "Une erreur est survenue lors de la récupération des données"
+        );
+      }
+
+      const [data_trending, data_popular] = await Promise.all([
+        response_trending.json(),
+        response_popular.json(),
+      ]);
+
       const trendingData = data_trending.results.map(
-        (anime: {
-          coverImage: {
-            extraLarge: string;
-          };
-          trailer: {
-            thumbnail: string;
-            id: string;
-          };
-          nextAiringEpisode: {
-            airingAt: number;
-            episode: number;
-          };
-          title: { english: string };
-          bannerImage: string;
-          status: string;
-          season: string;
-          genres: string[];
-          meanScore: number;
-          episodes: number;
-          id: string;
-          animeId: number;
-        }) => ({
+        (anime: AnimeApiResponse) => ({
           coverImage: anime.coverImage.extraLarge,
           title: anime.title.english,
           bannerImage: anime.bannerImage,
@@ -147,29 +261,13 @@ const CarouselList = () => {
           meanScore: anime.meanScore,
           id: anime.id,
           episodes: anime.episodes,
-          trailer: {
-            thumbnail: anime.trailer?.thumbnail,
-            id: anime.trailer?.id,
-          },
-          nextAiringEpisode: {
-            airingAt: anime.nextAiringEpisode?.airingAt,
-            episode: anime.nextAiringEpisode?.episode,
-          },
+          trailer: anime.trailer,
+          nextAiringEpisode: anime.nextAiringEpisode,
         })
       );
+
       const popularData = data_popular.results.map(
-        (anime: {
-          coverImage: {
-            extraLarge: string;
-          };
-          title: { english: string };
-          status: string;
-          genres: string[];
-          meanScore: number;
-          episodes: number;
-          id: string;
-          animeId: number;
-        }) => ({
+        (anime: AnimeApiResponse) => ({
           coverImage: anime.coverImage.extraLarge,
           title: anime.title.english,
           status: anime.status,
@@ -179,100 +277,103 @@ const CarouselList = () => {
           episodes: anime.episodes,
         })
       );
+
       setAnimeListTrending(trendingData);
       setAnimeListPopular(popularData);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    fetchData();
+      sessionStorage.setItem(
+        cacheKey,
+        JSON.stringify({ trending: trendingData, popular: popularData })
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          setError("Le temps de réponse est trop long, veuillez réessayer");
+        } else {
+          setError("Une erreur est survenue lors du chargement des données");
+        }
+      }
+      console.error("Erreur lors de la récupération des données:", error);
+    } finally {
+      setSectionsLoading((prev) => ({
+        ...prev,
+        trending: false,
+        popular: false,
+      }));
+    }
   }, []);
 
-  const settings = {
-    centeredSlides: false,
-    spaceBetween: 30,
-    loop: false,
-    navigation: true,
-    breakpoints: {
-      1980: {
-        slidesPerView: 8,
-        spaceBetween: 25,
-      },
-      1200: {
-        slidesPerView: 6,
-        spaceBetween: 25,
-      },
-      1180: {
-        slidesPerView: 5,
-        spaceBetween: 15,
-      },
-      1024: {
-        slidesPerView: 4,
-        spaceBetween: 15,
-      },
-      840: {
-        slidesPerView: 4,
-        spaceBetween: 15,
-      },
-      768: {
-        slidesPerView: 3,
-        spaceBetween: 25,
-      },
-      600: {
-        slidesPerView: 4,
-      },
-      299: {
-        slidesPerView: 2,
-        spaceBetween: 10,
-      },
-    },
-  };
+  const removeFromWatchlist = useCallback(async (animeId: string) => {
+    try {
+      setAnimatingIds((prev) => new Set(prev).add(animeId));
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-  const settingsTrailer = {
-    centeredSlides: true,
-    spaceBetween: 30,
-    loop: false,
-    navigation: true,
-    slidesPerView: 1,
-  };
+      const watchedAnimes = JSON.parse(
+        localStorage.getItem("watchedAnimes") || "[]"
+      );
+      const updatedWatchedAnimes = watchedAnimes.filter(
+        (anime: { id: string }) => anime.id !== animeId
+      );
+      localStorage.setItem(
+        "watchedAnimes",
+        JSON.stringify(updatedWatchedAnimes)
+      );
 
-  const settingsUpcoming = {
-    centeredSlides: false,
-    direction: "vertical" as const,
-    spaceBetween: 20,
-    loop: false,
-    navigation: true,
-    slidesPerView: 2,
-    slidesPerGroup: 2,
-  };
+      setWatchedAnimeList((prevList) =>
+        prevList.filter((anime) => String(anime.id) !== String(animeId))
+      );
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+    } finally {
+      setAnimatingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(animeId);
+        return next;
+      });
+    }
+  }, []);
 
-  const removeFromWatchlist = async (animeId: string) => {
-    setAnimatingIds((prev) => new Set(prev).add(animeId));
+  useEffect(() => {
+    const fetchData = async () => {
+      setError(null);
+      try {
+        await Promise.all([fetchWatchedAnimes(), fetchAnimeList()]);
+      } catch (error) {
+        console.error("Erreur lors du chargement:", error);
+        setError("Erreur lors du chargement");
+      }
+    };
 
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    fetchData();
+  }, [fetchWatchedAnimes, fetchAnimeList]);
 
-    const watchedAnimes = JSON.parse(
-      localStorage.getItem("watchedAnimes") || "[]"
+  const renderSkeleton = () => (
+    <div>
+      <Swiper {...settings} modules={[Navigation]} className="swiper-container">
+        {Array.from({ length: 12 }).map((_, index) => (
+          <SwiperSlide key={index}>
+            <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
+            <Skeleton className="h-4 w-36 mb-2" />
+            <div className="flex mb-6">
+              <Skeleton className="h-4 w-16 mr-1" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
+    </div>
+  );
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Réessayer</Button>
+        </div>
+      </div>
     );
-    const updatedWatchedAnimes = watchedAnimes.filter(
-      (anime: { id: string }) => anime.id !== animeId
-    );
-    localStorage.setItem("watchedAnimes", JSON.stringify(updatedWatchedAnimes));
-
-    setWatchedAnimeList((prevList) =>
-      prevList.filter((anime) => String(anime.id) !== String(animeId))
-    );
-
-    setAnimatingIds((prev) => {
-      const next = new Set(prev);
-      next.delete(animeId);
-      return next;
-    });
-  };
+  }
 
   return (
     <div className="carousel_list px-8 mt-7 md:px-20 md:mt-10 w-full ">
@@ -294,27 +395,9 @@ const CarouselList = () => {
               </div>
             </div>
 
-            {loading && (
-              <div>
-                <Swiper
-                  {...settings}
-                  modules={[Navigation]}
-                  className="swiper-container"
-                >
-                  {Array.from({ length: 12 }).map((_, index) => (
-                    <SwiperSlide key={index}>
-                      <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
-                      <Skeleton className="h-4 w-36 mb-2" />
-                      <div className="flex">
-                        <Skeleton className="h-4 w-16 mr-1" />
-                        <Skeleton className="h-4 w-16" />
-                      </div>
-                    </SwiperSlide>
-                  ))}
-                </Swiper>
-              </div>
-            )}
-            {!loading && watchedAnimeList && (
+            {sectionsLoading.watched ? (
+              renderSkeleton()
+            ) : (
               <Swiper
                 {...settings}
                 modules={[Navigation]}
@@ -354,7 +437,8 @@ const CarouselList = () => {
                                   variant="secondary"
                                   key={0}
                                 >
-                                  {anime.status}
+                                  <Star className="h-4 w-4 mr-1" />
+                                  {(anime?.score?.decimalScore / 2).toFixed(1)}
                                 </Badge>
                               )}
                               <Button
@@ -412,7 +496,9 @@ const CarouselList = () => {
                         </h2>
                       </Link>
                       <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                        Épisode {watchedAnime?.lastEpisode || "?"}
+                        {anime.episodes === 1
+                          ? "Movie"
+                          : `Episode ${watchedAnime?.lastEpisode || "?"}`}
                       </p>
                     </SwiperSlide>
                   );
@@ -441,128 +527,82 @@ const CarouselList = () => {
           </Link>
         </div>
 
-        {loading && (
-          <div>
-            <Swiper
-              {...settings}
-              modules={[Navigation]}
-              className="swiper-container"
-            >
-              {Array.from({ length: 12 }).map((_, index) => (
-                <SwiperSlide key={index}>
-                  <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
-                  <Skeleton className="h-4 w-36 mb-2" />
-                  <div className="flex">
-                    <Skeleton className="h-4 w-16 mr-1" />
-                    <Skeleton className="h-4 w-16" />
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        )}
-        {!loading && animeListPopular && (
+        {sectionsLoading.popular ? (
+          renderSkeleton()
+        ) : (
           <Swiper
             {...settings}
             modules={[Navigation]}
             className="swiper-container"
           >
-            {loading && (
-              <div>
-                <Swiper
-                  {...settings}
-                  modules={[Navigation]}
-                  className="swiper-container"
-                >
-                  {Array.from({ length: 12 }).map((_, index) => (
-                    <SwiperSlide key={index}>
-                      <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
-                      <Skeleton className="h-4 w-36 mb-2" />
-                      <div className="flex">
-                        <Skeleton className="h-4 w-16 mr-1" />
-                        <Skeleton className="h-4 w-16" />
+            {animeListPopular.slice(0, 12).map((anime, index) => (
+              <SwiperSlide key={index}>
+                <Link to="/anime/$id" params={{ id: anime.id }}>
+                  <div className="relative overflow-hidden rounded-lg group">
+                    <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
+                      <div className="statusBadge hidden md:block">
+                        {anime.status && (
+                          <Badge
+                            className="text-xs mr-0.5 md:mr-1 cursor-default h-6 flex items-center"
+                            variant="secondary"
+                            key={0}
+                          >
+                            {anime.status}
+                          </Badge>
+                        )}
                       </div>
-                    </SwiperSlide>
-                  ))}
-                </Swiper>
-              </div>
-            )}
-            {!loading && animeListPopular && (
-              <Swiper
-                {...settings}
-                modules={[Navigation]}
-                className="swiper-container"
-              >
-                {animeListPopular.slice(0, 12).map((anime, index) => (
-                  <SwiperSlide key={index}>
-                    <Link to="/anime/$id" params={{ id: anime.id }}>
-                      <div className="relative overflow-hidden rounded-lg group">
-                        <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
-                          <div className="statusBadge hidden md:block">
-                            {anime.status && (
-                              <Badge
-                                className="text-xs mr-0.5 md:mr-1 cursor-default h-6 flex items-center"
-                                variant="secondary"
-                                key={0}
-                              >
-                                {anime.status}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="meanScoreBadge lg:ml-auto">
-                            {anime.meanScore && (
-                              <Badge
-                                className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
-                                variant="secondary"
-                                key={0}
-                              >
-                                <Star className="h-4 w-4 mr-1" />
-                                {(anime.meanScore / 20).toFixed(1)}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <img
-                          className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
-                          src={
-                            typeof anime.coverImage === "string"
-                              ? anime.coverImage
-                              : anime.coverImage.extraLarge ||
-                                anime.coverImage.large
-                          }
-                          alt={
-                            typeof anime.title === "string"
-                              ? anime.title
-                              : anime.title.english || anime.title.romaji
-                          }
-                        />
+                      <div className="meanScoreBadge lg:ml-auto">
+                        {anime.meanScore && (
+                          <Badge
+                            className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
+                            variant="secondary"
+                            key={0}
+                          >
+                            <Star className="h-4 w-4 mr-1" />
+                            {(anime.meanScore / 20).toFixed(1)}
+                          </Badge>
+                        )}
                       </div>
-                      <h2
-                        className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base"
-                        style={{
-                          whiteSpace: "pre-wrap",
-                          display: "-webkit-box",
-                          WebkitLineClamp: 1,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {typeof anime.title === "string"
+                    </div>
+                    <img
+                      className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
+                      src={
+                        typeof anime.coverImage === "string"
+                          ? anime.coverImage
+                          : anime.coverImage.extraLarge ||
+                            anime.coverImage.large
+                      }
+                      alt={
+                        typeof anime.title === "string"
                           ? anime.title
-                          : anime.title.english || anime.title.romaji}
-                      </h2>
-                    </Link>
-                    <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                      {anime.episodes === null
-                        ? "X episodes"
-                        : anime.episodes === 1
-                          ? `Movie`
-                          : `${anime.episodes} episodes`}
-                    </p>
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-            )}
+                          : anime.title.english || anime.title.romaji
+                      }
+                    />
+                  </div>
+                  <h2
+                    className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base"
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 1,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {typeof anime.title === "string"
+                      ? anime.title
+                      : anime.title.english || anime.title.romaji}
+                  </h2>
+                </Link>
+                <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                  {anime.episodes === null
+                    ? "X episodes"
+                    : anime.episodes === 1
+                      ? `Movie`
+                      : `${anime.episodes} episodes`}
+                </p>
+              </SwiperSlide>
+            ))}
           </Swiper>
         )}
       </div>
@@ -586,114 +626,90 @@ const CarouselList = () => {
           </Link>
         </div>
 
-        <Swiper
-          {...settings}
-          modules={[Navigation]}
-          className="swiper-container"
-        >
-          {loading && (
-            <div>
-              <Swiper
-                {...settings}
-                modules={[Navigation]}
-                className="swiper-container"
-              >
-                {Array.from({ length: 12 }).map((_, index) => (
-                  <SwiperSlide key={index}>
-                    <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
-                    <Skeleton className="h-4 w-36 mb-2" />
-                    <div className="flex">
-                      <Skeleton className="h-4 w-16 mr-1" />
-                      <Skeleton className="h-4 w-16" />
-                    </div>
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-            </div>
-          )}
-          {!loading && animeListPopular && (
-            <Swiper
-              {...settings}
-              modules={[Navigation]}
-              className="swiper-container"
-            >
-              {animeListTrending
-                .slice(0, 12)
-                .filter(
-                  (anime) =>
-                    anime.title !== null && anime.status !== "NOT_YET_RELEASED"
-                )
-                .map((anime, index) => (
-                  <SwiperSlide key={index}>
-                    <Link to="/anime/$id" params={{ id: anime.id }}>
-                      <div className="relative overflow-hidden rounded-lg group">
-                        <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
-                          <div className="statusBadge hidden md:block">
-                            {anime.status && (
-                              <Badge
-                                className="text-xs mr-0.5 md:mr-1 cursor-default h-6 flex items-center"
-                                variant="secondary"
-                                key={0}
-                              >
-                                {anime.status}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="meanScoreBadge lg:ml-auto">
-                            {anime.meanScore && (
-                              <Badge
-                                className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
-                                variant="secondary"
-                                key={0}
-                              >
-                                <Star className="h-4 w-4 mr-1" />
-                                {(anime.meanScore / 20).toFixed(1)}
-                              </Badge>
-                            )}
-                          </div>
+        {sectionsLoading.trending ? (
+          renderSkeleton()
+        ) : (
+          <Swiper
+            {...settings}
+            modules={[Navigation]}
+            className="swiper-container"
+          >
+            {animeListTrending
+              .slice(0, 12)
+              .filter(
+                (anime) =>
+                  anime.title !== null && anime.status !== "NOT_YET_RELEASED"
+              )
+              .map((anime, index) => (
+                <SwiperSlide key={index}>
+                  <Link to="/anime/$id" params={{ id: anime.id }}>
+                    <div className="relative overflow-hidden rounded-lg group">
+                      <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
+                        <div className="statusBadge hidden md:block">
+                          {anime.status && (
+                            <Badge
+                              className="text-xs mr-0.5 md:mr-1 cursor-default h-6 flex items-center"
+                              variant="secondary"
+                              key={0}
+                            >
+                              {anime.status}
+                            </Badge>
+                          )}
                         </div>
-                        <img
-                          className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
-                          src={
-                            typeof anime.coverImage === "string"
-                              ? anime.coverImage
-                              : anime.coverImage.extraLarge ||
-                                anime.coverImage.large
-                          }
-                          alt={
-                            typeof anime.title === "string"
-                              ? anime.title
-                              : anime.title.english || anime.title.romaji
-                          }
-                        />
+                        <div className="meanScoreBadge lg:ml-auto">
+                          {anime.meanScore && (
+                            <Badge
+                              className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
+                              variant="secondary"
+                              key={0}
+                            >
+                              <Star className="h-4 w-4 mr-1" />
+                              {(anime.meanScore / 20).toFixed(1)}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      <h2
-                        className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-1"
-                        style={{
-                          whiteSpace: "pre-wrap",
-                          display: "-webkit-box",
-                          WebkitLineClamp: 1,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {typeof anime.title === "string"
-                          ? anime.title
-                          : anime.title.english || anime.title.romaji}
-                      </h2>
-                    </Link>
-                    <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                      {anime.episodes === null
-                        ? "X episodes"
-                        : anime.episodes === 1
-                          ? `Movie`
-                          : `${anime.episodes} episodes`}
-                    </p>
-                  </SwiperSlide>
-                ))}
-            </Swiper>
-          )}
-        </Swiper>
+                      <img
+                        className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
+                        src={
+                          typeof anime.coverImage === "string"
+                            ? anime.coverImage
+                            : anime.coverImage.extraLarge ||
+                              anime.coverImage.large
+                        }
+                        alt={
+                          typeof anime.title === "string"
+                            ? anime.title
+                            : anime.title.english || anime.title.romaji
+                        }
+                      />
+                    </div>
+                    <h2
+                      className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-1"
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {typeof anime.title === "string"
+                        ? anime.title
+                        : anime.title.english || anime.title.romaji}
+                    </h2>
+                  </Link>
+                  <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                    {anime.episodes === null
+                      ? "X episodes"
+                      : anime.episodes === 1
+                        ? `Movie`
+                        : `${anime.episodes} episodes`}
+                  </p>
+                </SwiperSlide>
+              ))}
+          </Swiper>
+        )}
       </div>
       <div className="trailer lg:hidden">
         <div className="flex mt-3">
@@ -703,27 +719,9 @@ const CarouselList = () => {
         <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
           A selection of new trailer !
         </p>
-        {loading && (
-          <div>
-            <Swiper
-              {...settingsTrailer}
-              modules={[Navigation]}
-              className="swiper-container"
-            >
-              {Array.from({ length: 12 }).map((_, index) => (
-                <SwiperSlide key={index}>
-                  <Skeleton className="h-60 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
-                  <Skeleton className="h-4 w-36 mb-2" />
-                  <div className="flex">
-                    <Skeleton className="h-4 w-16 mr-1" />
-                    <Skeleton className="h-4 w-16" />
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        )}
-        {!loading && animeListTrending && (
+        {sectionsLoading.trending ? (
+          renderSkeleton()
+        ) : (
           <Swiper
             {...settingsTrailer}
             modules={[Navigation]}
@@ -807,27 +805,9 @@ const CarouselList = () => {
         <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
           A selection of new trailer !
         </p>
-        {loading && (
-          <div>
-            <Swiper
-              {...settings}
-              modules={[Navigation]}
-              className="swiper-container"
-            >
-              {Array.from({ length: 12 }).map((_, index) => (
-                <SwiperSlide key={index}>
-                  <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
-                  <Skeleton className="h-4 w-36 mb-2" />
-                  <div className="flex">
-                    <Skeleton className="h-4 w-16 mr-1" />
-                    <Skeleton className="h-4 w-16" />
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        )}
-        {!loading && animeListTrending && (
+        {sectionsLoading.trending ? (
+          renderSkeleton()
+        ) : (
           <div className="flex">
             <div className="mainUpcoming">
               {[...animeListTrending]
@@ -868,7 +848,7 @@ const CarouselList = () => {
                 .filter(
                   (anime) =>
                     anime.nextAiringEpisode !== null &&
-                    anime.nextAiringEpisode.episode !== undefined &&
+                    anime.nextAiringEpisode?.episode !== undefined &&
                     anime.bannerImage !== null &&
                     anime.id !==
                       [...animeListTrending]
@@ -876,7 +856,7 @@ const CarouselList = () => {
                         .filter(
                           (a) =>
                             a.nextAiringEpisode !== null &&
-                            a.nextAiringEpisode.episode !== undefined &&
+                            a.nextAiringEpisode?.episode !== undefined &&
                             a.bannerImage !== null
                         )[0]?.id
                 )
@@ -956,27 +936,9 @@ const CarouselList = () => {
         <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
           Here is a selection of our current favourites
         </p>
-        {loading && (
-          <div>
-            <Swiper
-              {...settings}
-              modules={[Navigation]}
-              className="swiper-container"
-            >
-              {Array.from({ length: 12 }).map((_, index) => (
-                <SwiperSlide key={index}>
-                  <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
-                  <Skeleton className="h-4 w-36 mb-2" />
-                  <div className="flex">
-                    <Skeleton className="h-4 w-16 mr-1" />
-                    <Skeleton className="h-4 w-16" />
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        )}
-        {!loading && animeListTrending && (
+        {sectionsLoading.trending ? (
+          renderSkeleton()
+        ) : (
           <Swiper
             {...settings}
             modules={[Navigation]}
@@ -1068,27 +1030,9 @@ const CarouselList = () => {
         <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
           A selection just for you !
         </p>
-        {loading && (
-          <div>
-            <Swiper
-              {...settings}
-              modules={[Navigation]}
-              className="swiper-container"
-            >
-              {Array.from({ length: 12 }).map((_, index) => (
-                <SwiperSlide key={index}>
-                  <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
-                  <Skeleton className="h-4 w-36 mb-2" />
-                  <div className="flex">
-                    <Skeleton className="h-4 w-16 mr-1" />
-                    <Skeleton className="h-4 w-16" />
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        )}
-        {!loading && animeListPopular && (
+        {sectionsLoading.popular ? (
+          renderSkeleton()
+        ) : (
           <Swiper
             {...settings}
             modules={[Navigation]}
