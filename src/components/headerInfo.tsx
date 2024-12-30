@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "./ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const StarRating = ({ rating }: { rating: number }) => {
   const stars = useMemo(() => {
@@ -102,40 +103,148 @@ const HeaderInfo = () => {
   >([]);
   const [selectedPlayer, setSelectedPlayer] = useState<string>("0");
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [iframeLoading, setIframeLoading] = useState(true);
 
-  const fetchStreamingData = useCallback(async (episodeNumber: string) => {
-    try {
-      const idGogo = localStorage.getItem("idGogo");
-      const cacheKey = `streaming_${idGogo}_${episodeNumber}`;
-      const cachedData = sessionStorage.getItem(cacheKey);
+  const updateWatchHistory = useCallback((animeId: string, _animeData: any) => {
+    const existingAnimes = JSON.parse(
+      localStorage.getItem("watchedAnimes") || "[]"
+    );
+    const animeIndex = existingAnimes.findIndex(
+      (anime: { id: string }) => anime.id === animeId
+    );
 
-      if (cachedData) {
-        const data = JSON.parse(cachedData);
-        setAvailablePlayers(data.iframe);
-        setStreamingUrl(data.iframe[0].iframe);
-        return;
-      }
-
-      const responseStreaming = await fetch(
-        `https://api.amvstr.me/api/v2/stream/${idGogo}/${episodeNumber}`
-      );
-      const dataStreaming = await responseStreaming.json();
-
-      if (dataStreaming.iframe && dataStreaming.iframe.length > 0) {
-        setAvailablePlayers(dataStreaming.iframe);
-        setStreamingUrl(dataStreaming.iframe[0].iframe);
-        sessionStorage.setItem(cacheKey, JSON.stringify(dataStreaming));
-      }
-    } catch (error) {
-      console.error("Error fetching streaming data:", error);
+    let animeEntry;
+    if (animeIndex !== -1) {
+      animeEntry = {
+        ...existingAnimes[animeIndex],
+        timestamp: Date.now(),
+      };
+      existingAnimes.splice(animeIndex, 1);
+    } else {
+      animeEntry = {
+        id: animeId,
+        lastEpisode: "1",
+        timestamp: Date.now(),
+      };
     }
+
+    existingAnimes.unshift(animeEntry);
+
+    const limitedAnimes = existingAnimes.slice(0, 20);
+    localStorage.setItem("watchedAnimes", JSON.stringify(limitedAnimes));
   }, []);
+
+  const fetchStreamingData = useCallback(
+    async (episodeNumber: string, signal?: AbortSignal) => {
+      try {
+        setIframeLoading(true);
+        setError(null);
+
+        const idGogo =
+          animeInfo?.id_provider?.idGogo || localStorage.getItem("idGogo");
+
+        if (!idGogo || idGogo === "undefined") {
+          setError("No source available for this episode");
+          setIframeLoading(false);
+          return;
+        }
+
+        const cacheKey = `streaming_${idGogo}_${episodeNumber}`;
+        const cachedData = sessionStorage.getItem(cacheKey);
+
+        if (cachedData) {
+          try {
+            const data = JSON.parse(cachedData);
+            if (data.iframe && data.iframe.length > 0) {
+              setAvailablePlayers(data.iframe);
+              const iframeUrl = new URL(data.iframe[0].iframe);
+              iframeUrl.searchParams.set("pause", "1");
+              setStreamingUrl(iframeUrl.toString());
+              setSelectedPlayer("0");
+              return;
+            }
+          } catch (e) {
+            sessionStorage.removeItem(cacheKey);
+          }
+        }
+
+        const responseStreaming = await fetch(
+          `https://api.amvstr.me/api/v2/stream/${idGogo}/${episodeNumber}`,
+          {
+            signal,
+            headers: {
+              Accept: "application/json",
+              "Cache-Control": "no-cache",
+            },
+          }
+        );
+
+        if (!responseStreaming.ok) {
+          throw new Error(`Erreur serveur: ${responseStreaming.status}`);
+        }
+
+        const dataStreaming = await responseStreaming.json();
+
+        if (!dataStreaming?.iframe?.length) {
+          throw new Error("No source available for this episode");
+        }
+
+        const validIframes = dataStreaming.iframe
+          .map((player: any, index: number) => ({
+            name: player.name || `Lecteur ${index + 1}`,
+            iframe: player.iframe,
+          }))
+          .filter((player: { iframe: string }) => {
+            try {
+              new URL(player.iframe);
+              return true;
+            } catch {
+              return false;
+            }
+          });
+
+        if (!validIframes.length) {
+          throw new Error("No valid source available");
+        }
+
+        setAvailablePlayers(validIframes);
+        const iframeUrl = new URL(validIframes[0].iframe);
+        iframeUrl.searchParams.set("pause", "1");
+        setStreamingUrl(iframeUrl.toString());
+        setSelectedPlayer("0");
+
+        sessionStorage.setItem(
+          cacheKey,
+          JSON.stringify({ iframe: validIframes })
+        );
+      } catch (error) {
+        if (error instanceof Error) {
+          if (error.name === "AbortError") return;
+          setError(
+            error.message.includes("Erreur serveur")
+              ? "Streaming server is temporarily unavailable"
+              : error.message
+          );
+        }
+        setStreamingUrl("");
+        setAvailablePlayers([]);
+        setSelectedPlayer("0");
+      } finally {
+        setIframeLoading(false);
+      }
+    },
+    [animeInfo?.id_provider?.idGogo]
+  );
 
   useEffect(() => {
     const controller = new AbortController();
+    let timeoutId: NodeJS.Timeout;
 
     const fetchData = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const animeId = window.location.pathname.split("/")[2];
         const cacheKey = `anime_data_${animeId}`;
         const cachedData = sessionStorage.getItem(cacheKey);
@@ -145,10 +254,30 @@ const HeaderInfo = () => {
           setAnimeInfo(animeData);
           setEpisodeList(episodesData);
           updateWatchHistory(animeId, animeData);
-          await fetchStreamingData("1");
-          setLoading(false);
+
+          if (animeData.id_provider?.idGogo) {
+            localStorage.setItem("idGogo", animeData.id_provider.idGogo);
+            await fetchStreamingData("1", controller.signal);
+          } else {
+            localStorage.setItem("idGogo", "undefined");
+            setError("No source available for this anime");
+          }
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          if (animeData && Object.keys(animeData).length > 0) {
+            setLoading(false);
+          }
           return;
         }
+
+        timeoutId = setTimeout(() => {
+          if (loading) {
+            controller.abort();
+            setError(
+              "Streaming server is taking too long to respond, please try again"
+            );
+            setLoading(false);
+          }
+        }, 20000);
 
         const [animeResponse, episodesResponse] = await Promise.all([
           fetch(`https://api.amvstr.me/api/v2/info/${animeId}`, {
@@ -159,10 +288,16 @@ const HeaderInfo = () => {
           }),
         ]);
 
+        if (!animeResponse.ok || !episodesResponse.ok) {
+          throw new Error("Error while retrieving data");
+        }
+
         const [animeData, episodesData] = await Promise.all([
           animeResponse.json(),
           episodesResponse.json(),
         ]);
+
+        if (!loading) return;
 
         setAnimeInfo(animeData);
         updateWatchHistory(animeId, animeData);
@@ -194,54 +329,40 @@ const HeaderInfo = () => {
           })
         );
 
-        await fetchStreamingData("1");
+        await fetchStreamingData("1", controller.signal);
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        if (animeData && Object.keys(animeData).length > 0) {
+          setLoading(false);
+        }
       } catch (error: unknown) {
-        if (error instanceof Error && error.name === "AbortError") return;
+        if (error instanceof Error) {
+          if (error.name === "AbortError") {
+            return;
+          } else {
+            setError("An error occurred while loading");
+          }
+        }
         console.error("Error fetching data:", error);
-      } finally {
         setLoading(false);
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
       }
     };
 
     fetchData();
 
-    return () => controller.abort();
-  }, [fetchStreamingData]);
-
-  const updateWatchHistory = useCallback((animeId: string, _animeData: any) => {
-    const existingAnimes = JSON.parse(
-      localStorage.getItem("watchedAnimes") || "[]"
-    );
-    const animeIndex = existingAnimes.findIndex(
-      (anime: { id: string }) => anime.id === animeId
-    );
-
-    const animeEntry = {
-      id: animeId,
-      lastEpisode:
-        animeIndex !== -1 ? existingAnimes[animeIndex].lastEpisode : "1",
-      timestamp: Date.now(),
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      controller.abort();
     };
-
-    if (animeIndex !== -1) {
-      existingAnimes[animeIndex] = {
-        ...existingAnimes[animeIndex],
-        timestamp: Date.now(),
-      };
-    } else {
-      existingAnimes.unshift(animeEntry);
-    }
-
-    const limitedAnimes = existingAnimes.slice(0, 20);
-    localStorage.setItem("watchedAnimes", JSON.stringify(limitedAnimes));
-  }, []);
+  }, [fetchStreamingData, updateWatchHistory]);
 
   useEffect(() => {
     const handleHashChange = () => {
       const episodeHash = window.location.hash.match(/episode-(\d+)/);
       const animeId = window.location.pathname.split("/")[2];
 
-      // Récupérer le dernier épisode regardé depuis localStorage
       const watchedAnimes = JSON.parse(
         localStorage.getItem("watchedAnimes") || "[]"
       );
@@ -249,12 +370,10 @@ const HeaderInfo = () => {
         (anime: { id: string }) => anime.id === animeId
       );
 
-      // Si pas de hash dans l'URL, utiliser le dernier épisode regardé ou 1
       let newEpisode = episodeHash
         ? episodeHash[1]
         : watchedAnime?.lastEpisode || "1";
 
-      // Vérifier si l'épisode est valide
       const isValidEpisode = (episode: string): boolean => {
         const episodeNum = parseInt(episode);
 
@@ -273,7 +392,6 @@ const HeaderInfo = () => {
         newEpisode = watchedAnime?.lastEpisode || "1";
       }
 
-      // Ne mettre à jour le hash que si nécessaire
       if (!episodeHash) {
         window.location.hash = `episode-${newEpisode}`;
       }
@@ -290,7 +408,7 @@ const HeaderInfo = () => {
     };
   }, [animeInfo, episodeList]);
 
-  if (loading) {
+  if (loading || !animeInfo || Object.keys(animeInfo).length === 0) {
     return <HeaderInfoSkeleton />;
   }
 
@@ -434,7 +552,6 @@ const HeaderInfo = () => {
                   ? episodeList[episodeList.length - 1].number.toString()
                   : "1";
 
-            // Mettre à jour lastEpisode dans le localStorage et réorganiser
             const animeId = window.location.pathname.split("/")[2];
             const watchedAnimes = JSON.parse(
               localStorage.getItem("watchedAnimes") || "[]"
@@ -444,14 +561,12 @@ const HeaderInfo = () => {
             );
 
             if (animeIndex !== -1) {
-              // Retirer l'anime de sa position actuelle
               const updatedAnime = {
                 ...watchedAnimes[animeIndex],
                 lastEpisode: lastEpisode,
                 timestamp: Date.now(),
               };
               watchedAnimes.splice(animeIndex, 1);
-              // Le remettre au début du tableau
               watchedAnimes.unshift(updatedAnime);
 
               localStorage.setItem(
@@ -471,9 +586,9 @@ const HeaderInfo = () => {
           value={selectedEpisode}
           onValueChange={async (value) => {
             setSelectedEpisode(value);
+            setIframeLoading(true);
             await fetchStreamingData(value);
 
-            // Mettre à jour lastEpisode dans le localStorage et réorganiser
             const animeId = window.location.pathname.split("/")[2];
             const watchedAnimes = JSON.parse(
               localStorage.getItem("watchedAnimes") || "[]"
@@ -531,7 +646,17 @@ const HeaderInfo = () => {
             value={selectedPlayer}
             onValueChange={(value) => {
               setSelectedPlayer(value);
-              setStreamingUrl(availablePlayers[parseInt(value)].iframe);
+              setIframeLoading(true);
+              if (availablePlayers[parseInt(value)]) {
+                const iframeUrl = new URL(
+                  availablePlayers[parseInt(value)].iframe
+                );
+                iframeUrl.searchParams.set("pause", "1");
+                setStreamingUrl(iframeUrl.toString());
+                setTimeout(() => {
+                  setIframeLoading(false);
+                }, 2000);
+              }
             }}
           >
             <SelectTrigger className="w-[180px]">
@@ -540,7 +665,7 @@ const HeaderInfo = () => {
             <SelectContent>
               {availablePlayers.map((player, index) => (
                 <SelectItem key={index} value={index.toString()}>
-                  Lecteur {player.name || index + 1}
+                  {player.name || `Lecteur ${index + 1}`}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -548,30 +673,58 @@ const HeaderInfo = () => {
         </div>
       </div>
 
-      {streamingUrl && localStorage.getItem("idGogo") !== "undefined" ? (
-        <div className="mt-6 aspect-video pb-8 px-5 md:px-8">
-          <iframe
-            key={streamingUrl}
-            src={streamingUrl}
-            className="w-full h-full"
-            allowFullScreen
-            allow="fullscreen"
-            referrerPolicy="no-referrer"
-            loading="lazy"
-            scrolling="no"
-            frameBorder="0"
-            security="restricted"
-          ></iframe>
+      <div className="mt-6 aspect-video pb-8 px-5 md:px-8">
+        <div className="relative w-full h-full">
+          {iframeLoading && (
+            <div className="absolute inset-0 z-10 bg-background">
+              <Skeleton className="w-full h-full rounded-lg" />
+            </div>
+          )}
+          {error ? (
+            <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <div className="text-center">
+                <p className="text-lg text-gray-500 mb-2">{error}</p>
+                <Button
+                  className="bg-blue-500 text-white hover:bg-blue-600"
+                  onClick={() => {
+                    setError(null);
+                    fetchStreamingData(selectedEpisode);
+                  }}
+                >
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          ) : streamingUrl && localStorage.getItem("idGogo") !== "undefined" ? (
+            <div className="w-full h-full">
+              <iframe
+                key={`${streamingUrl}-${selectedPlayer}`}
+                src={streamingUrl}
+                className="w-full h-full rounded-lg"
+                allowFullScreen
+                allow="fullscreen"
+                referrerPolicy="no-referrer"
+                loading="lazy"
+                scrolling="no"
+                frameBorder="0"
+                security="restricted"
+                style={{ display: iframeLoading ? "none" : "block" }}
+                onLoad={() => {
+                  setTimeout(() => {
+                    setIframeLoading(false);
+                  }, 500);
+                }}
+              />
+            </div>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <p className="text-lg text-gray-500">
+                Content currently unavailable
+              </p>
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="mt-6 aspect-video pb-8 px-5 md:px-8">
-          <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
-            <p className="text-lg text-gray-500">
-              Content currently unavailable
-            </p>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 };

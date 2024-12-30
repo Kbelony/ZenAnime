@@ -20,7 +20,7 @@ const HeaderInfoSkeleton = () => {
         <Skeleton className="object-cover blur_img h-40 w-full" />
         <div className="absolute top-20 p-4">
           <div className="flex ml-7 desktop_img">
-            <Skeleton className="mr-5 portrait:w-46 h-80 rounded-lg" />
+            <Skeleton className="mr-5 w-[224px] h-80 rounded-lg" />
             <div className="ml-2 mb-2">
               <Skeleton className="h-10 w-60" />
               <Skeleton className="h-4 w-24 mt-4" />
