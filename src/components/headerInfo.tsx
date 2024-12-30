@@ -99,7 +99,12 @@ const HeaderInfo = () => {
   const [streamingUrl, setStreamingUrl] = useState<string>("");
   const [selectedEpisode, setSelectedEpisode] = useState<string>("1");
   const [availablePlayers, setAvailablePlayers] = useState<
-    Array<{ name: string; iframe: string }>
+    Array<{
+      id: string;
+      url: string | URL;
+      name: string;
+      iframe: string;
+    }>
   >([]);
   const [selectedPlayer, setSelectedPlayer] = useState<string>("0");
   const [loading, setLoading] = useState<boolean>(true);
@@ -156,12 +161,16 @@ const HeaderInfo = () => {
         if (cachedData) {
           try {
             const data = JSON.parse(cachedData);
-            if (data.iframe && data.iframe.length > 0) {
-              setAvailablePlayers(data.iframe);
-              const iframeUrl = new URL(data.iframe[0].iframe);
+            if (data.players && data.players.length > 0) {
+              setAvailablePlayers(data.players);
+              const defaultPlayer =
+                data.players.find(
+                  (player: { name: string }) => player.name === "nspl Main"
+                ) || data.players[0];
+              const iframeUrl = new URL(defaultPlayer.url);
               iframeUrl.searchParams.set("pause", "1");
               setStreamingUrl(iframeUrl.toString());
-              setSelectedPlayer("0");
+              setSelectedPlayer(defaultPlayer.id.toString());
               return;
             }
           } catch (e) {
@@ -186,37 +195,62 @@ const HeaderInfo = () => {
 
         const dataStreaming = await responseStreaming.json();
 
-        if (!dataStreaming?.iframe?.length) {
+        if (!dataStreaming?.iframe?.length && !dataStreaming?.nspl) {
           throw new Error("No source available for this episode");
         }
 
-        const validIframes = dataStreaming.iframe
-          .map((player: any, index: number) => ({
+        const iframeSources = dataStreaming.iframe.map(
+          (player: any, index: number) => ({
+            id: `iframe-${index}`,
             name: player.name || `Lecteur ${index + 1}`,
-            iframe: player.iframe,
-          }))
-          .filter((player: { iframe: string }) => {
+            url: player.iframe,
+          })
+        );
+
+        const nsplSources = dataStreaming.nspl
+          ? [
+              {
+                id: "nspl-main",
+                name: "nspl Main",
+                url: dataStreaming.nspl.main,
+              },
+              {
+                id: "nspl-backup",
+                name: "nspl Backup",
+                url: dataStreaming.nspl.backup,
+              },
+            ]
+          : [];
+
+        const validPlayers = [...nsplSources, ...iframeSources].filter(
+          (player) => {
             try {
-              new URL(player.iframe);
+              new URL(player.url);
               return true;
             } catch {
               return false;
             }
-          });
+          }
+        );
 
-        if (!validIframes.length) {
+        if (!validPlayers.length) {
           throw new Error("No valid source available");
         }
 
-        setAvailablePlayers(validIframes);
-        const iframeUrl = new URL(validIframes[0].iframe);
+        setAvailablePlayers(validPlayers);
+
+        // Définir nspl Main comme lecteur par défaut
+        const defaultPlayer =
+          validPlayers.find((player) => player.id === "nspl-main") ||
+          validPlayers[0];
+        const iframeUrl = new URL(defaultPlayer.url);
         iframeUrl.searchParams.set("pause", "1");
         setStreamingUrl(iframeUrl.toString());
-        setSelectedPlayer("0");
+        setSelectedPlayer(defaultPlayer.id.toString());
 
         sessionStorage.setItem(
           cacheKey,
-          JSON.stringify({ iframe: validIframes })
+          JSON.stringify({ players: validPlayers })
         );
       } catch (error) {
         if (error instanceof Error) {
@@ -647,10 +681,11 @@ const HeaderInfo = () => {
             onValueChange={(value) => {
               setSelectedPlayer(value);
               setIframeLoading(true);
-              if (availablePlayers[parseInt(value)]) {
-                const iframeUrl = new URL(
-                  availablePlayers[parseInt(value)].iframe
-                );
+              const selected = availablePlayers.find(
+                (player) => player.id === value
+              );
+              if (selected) {
+                const iframeUrl = new URL(selected.url);
                 iframeUrl.searchParams.set("pause", "1");
                 setStreamingUrl(iframeUrl.toString());
                 setTimeout(() => {
@@ -663,9 +698,9 @@ const HeaderInfo = () => {
               <SelectValue placeholder="Lecteur" />
             </SelectTrigger>
             <SelectContent>
-              {availablePlayers.map((player, index) => (
-                <SelectItem key={index} value={index.toString()}>
-                  {player.name || `Lecteur ${index + 1}`}
+              {availablePlayers.map((player) => (
+                <SelectItem key={player.id} value={player.id}>
+                  {player.name}
                 </SelectItem>
               ))}
             </SelectContent>
