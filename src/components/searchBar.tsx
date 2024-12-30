@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import axios from "axios";
 import { Input } from "@/components/ui/input";
+import DOMPurify from "dompurify";
 
 interface AnimeResult {
   id: string;
@@ -21,6 +22,25 @@ export default function SearchBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const searchCache = useRef<Record<string, AnimeResult[]>>({});
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Fonction pour valider et nettoyer l'entrée
+  const sanitizeInput = (input: string): string => {
+    // Supprime les caractères spéciaux et les scripts potentiels
+    const sanitized = DOMPurify.sanitize(input, {
+      ALLOWED_TAGS: [], // Ne permet aucune balise HTML
+      ALLOWED_ATTR: [], // Ne permet aucun attribut
+    });
+
+    // Limite aux caractères alphanumériques et quelques caractères spéciaux autorisés
+    return sanitized.replace(/[^a-zA-Z0-9\s-]/g, "").trim();
+  };
+
+  // Fonction pour valider la longueur de la recherche
+  const isValidSearchTerm = (term: string): boolean => {
+    return term.length >= 2 && term.length <= 50;
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -38,31 +58,70 @@ export default function SearchBar() {
 
   useEffect(() => {
     const searchAnime = async () => {
-      if (searchTerm.trim() === "") {
+      const cleanedSearchTerm = sanitizeInput(searchTerm);
+
+      if (!isValidSearchTerm(cleanedSearchTerm)) {
         setResults([]);
         return;
       }
 
+      // Annuler la requête précédente si elle existe
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // Vérifier le cache
+      const cacheKey = cleanedSearchTerm.toLowerCase();
+      if (searchCache.current[cacheKey]) {
+        setResults(searchCache.current[cacheKey]);
+        return;
+      }
+
       setIsLoading(true);
+      abortControllerRef.current = new AbortController();
+
       try {
         const response = await axios.get(
-          `https://api.amvstr.me/api/v2/search?q=${encodeURIComponent(searchTerm)}`
+          `https://api.amvstr.me/api/v2/search?q=${encodeURIComponent(cleanedSearchTerm)}&limit=10`,
+          {
+            signal: abortControllerRef.current.signal,
+            headers: {
+              "Content-Type": "application/json",
+              "X-Requested-With": "XMLHttpRequest",
+            },
+          }
         );
-        const filteredResults = response.data.results.filter(
-          (anime: AnimeResult) => anime.title.english
-        );
+
+        // Validation de la réponse
+        if (!Array.isArray(response.data.results)) {
+          throw new Error("Format de réponse invalide");
+        }
+
+        const filteredResults = response.data.results
+          .filter((anime: AnimeResult) => anime.title.english)
+          .slice(0, 10);
+
+        searchCache.current[cacheKey] = filteredResults;
         setResults(filteredResults);
-        console.log(response.data.results);
       } catch (error) {
-        console.error("Error during search:", error);
-        setResults([]);
+        if (axios.isCancel(error)) {
+          console.log("Requête annulée");
+        } else {
+          console.error("Error during search:", error);
+          setResults([]);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    const debounceTimeout = setTimeout(searchAnime, 300);
-    return () => clearTimeout(debounceTimeout);
+    const debounceTimeout = setTimeout(searchAnime, 500);
+    return () => {
+      clearTimeout(debounceTimeout);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [searchTerm]);
 
   return (
@@ -72,17 +131,35 @@ export default function SearchBar() {
           type="text"
           value={searchTerm}
           onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setIsOpen(true);
+            const value = e.target.value;
+            if (value.length <= 50) {
+              // Limite la longueur maximale
+              setSearchTerm(value);
+              setIsOpen(true);
+            }
+          }}
+          onKeyDown={(e) => {
+            // Bloquer certaines touches potentiellement dangereuses
+            if (
+              e.key === "<" ||
+              e.key === ">" ||
+              e.key === "{" ||
+              e.key === "}"
+            ) {
+              e.preventDefault();
+            }
           }}
           placeholder="Search an anime..."
           className="search-input pr-8 text-base"
           style={{ fontSize: "14px" }}
+          maxLength={50}
+          aria-label="Search anime"
         />
         {searchTerm && (
           <button
             onClick={() => setSearchTerm("")}
             className="reset-button absolute right-2 top-1/2 transform -translate-y-1/2"
+            aria-label="Clear search"
           >
             &times;
           </button>
