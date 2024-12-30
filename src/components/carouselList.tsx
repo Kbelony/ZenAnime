@@ -10,6 +10,7 @@ import {
   ChevronRight,
   StepForward,
   X,
+  Play,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
@@ -125,19 +126,6 @@ const CarouselList = () => {
       loop: false,
       navigation: true,
       slidesPerView: 1,
-    }),
-    []
-  );
-
-  const settingsUpcoming = useMemo(
-    () => ({
-      centeredSlides: false,
-      direction: "vertical" as const,
-      spaceBetween: 20,
-      loop: false,
-      navigation: true,
-      slidesPerView: 2,
-      slidesPerGroup: 2,
     }),
     []
   );
@@ -711,7 +699,7 @@ const CarouselList = () => {
           </Swiper>
         )}
       </div>
-      <div className="trailer lg:hidden">
+      <div className="trailer lg:hidden md:hidden">
         <div className="flex mt-3">
           <h3 className="font-semibold tracking-tight first:mt-0">Trailer </h3>
           <Clapperboard className="ml-2 mt-0.5 h-5 w-5" />
@@ -803,126 +791,119 @@ const CarouselList = () => {
           <Clapperboard className="ml-2 mt-0.5 h-5 w-5" />
         </div>
         <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-          A selection of new trailer !
+          Episodes that should be released soon
         </p>
         {sectionsLoading.trending ? (
           renderSkeleton()
         ) : (
-          <div className="flex">
-            <div className="mainUpcoming">
-              {[...animeListTrending]
-                .filter(
-                  (anime) =>
-                    anime.nextAiringEpisode !== null &&
-                    anime.bannerImage !== null
-                )
-                .slice(0, 1)
-                .map((anime, index) => (
-                  <div key={index}>
-                    <Link
-                      className="flex pr-6"
-                      to="/anime/$id"
-                      params={{ id: anime.id }}
-                    >
-                      <img
-                        className=" max-h-52 min-h-80 rounded-lg object-cover"
-                        src={anime.bannerImage}
-                        alt={
-                          typeof anime.title === "string"
-                            ? anime.title
-                            : anime.title.english || anime.title.romaji
-                        }
-                      />
-                    </Link>
-                  </div>
-                ))}
-            </div>
-            <Swiper
-              {...settingsUpcoming}
-              modules={[Navigation]}
-              className="swiper-container h-[315px]"
-            >
-              {[...animeListTrending]
-                .slice(0, 30)
-                .sort(() => Math.random() - 0.5)
-                .filter(
-                  (anime) =>
-                    anime.nextAiringEpisode !== null &&
-                    anime.nextAiringEpisode?.episode !== undefined &&
-                    anime.bannerImage !== null &&
-                    anime.id !==
-                      [...animeListTrending]
-                        .slice(0, 30)
-                        .filter(
-                          (a) =>
-                            a.nextAiringEpisode !== null &&
-                            a.nextAiringEpisode?.episode !== undefined &&
-                            a.bannerImage !== null
-                        )[0]?.id
-                )
-                .map((anime, index) => (
-                  <SwiperSlide key={index}>
-                    <Link
-                      className="flex"
-                      to="/anime/$id"
-                      params={{ id: anime.id }}
-                    >
-                      <img
-                        className="w-64 max-h-52 min-h-36 rounded-lg object-cover"
-                        src={anime.bannerImage}
-                        alt={
-                          typeof anime.title === "string"
-                            ? anime.title
-                            : anime.title.english || anime.title.romaji
-                        }
-                      />
-                      <div className="block ml-3">
-                        <h2
-                          className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base"
-                          style={{
-                            whiteSpace: "pre-wrap",
-                            display: "-webkit-box",
-                            WebkitLineClamp: 1,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {typeof anime.title === "string"
-                            ? anime.title
-                            : anime.title.english || anime.title.romaji}
-                        </h2>
-                        <div className="flex">
-                          <p className="mb-3 mt-1 pr-5 text-xs md:text-sm">
-                            {anime.nextAiringEpisode
-                              ? `Episode  ${anime.nextAiringEpisode.episode}`
-                              : anime.nextAiringEpisode === undefined
-                                ? "episode this week"
-                                : "X episodes"}
-                          </p>
-                          <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                            {anime.nextAiringEpisode
-                              ? new Date(
+          <div className="flex flex-col gap-4">
+            {[...animeListTrending]
+              .slice(0, 30)
+              .filter(
+                (anime) =>
+                  anime.nextAiringEpisode !== null &&
+                  anime.nextAiringEpisode?.episode !== undefined &&
+                  anime.bannerImage !== null &&
+                  anime.id !==
+                    [...animeListTrending]
+                      .slice(0, 30)
+                      .filter(
+                        (a) =>
+                          a.nextAiringEpisode !== null &&
+                          a.nextAiringEpisode?.episode !== undefined &&
+                          a.bannerImage !== null
+                      )[0]?.id
+              )
+              .sort((a, b) => {
+                const timeA = a.nextAiringEpisode?.airingAt || 0;
+                const timeB = b.nextAiringEpisode?.airingAt || 0;
+                return timeA - timeB;
+              })
+              .map((anime, index) => (
+                <div key={index} className="flex items-center p-2 gap-2">
+                  <Link
+                    to="/anime/$id"
+                    params={{ id: anime.id }}
+                    className="flex items-center gap-4 w-full"
+                  >
+                    <img
+                      className="rounded-lg h-32 object-cover"
+                      src={
+                        typeof anime.coverImage === "string"
+                          ? anime.coverImage
+                          : anime.coverImage.large
+                      }
+                      alt={
+                        typeof anime.title === "string"
+                          ? anime.title
+                          : anime.title.english || anime.title.romaji
+                      }
+                    />
+                    <div className="flex flex-col flex-1">
+                      <h2 className="scroll-m-20 text-sm font-extrabold tracking-tight lg:text-base">
+                        {typeof anime.title === "string"
+                          ? anime.title
+                          : anime.title.english || anime.title.romaji}
+                      </h2>
+                      <p className=" mt-3 text-sm">
+                        {anime.nextAiringEpisode
+                          ? `Episode  ${anime.nextAiringEpisode.episode}`
+                          : anime.nextAiringEpisode === undefined
+                            ? "episode this week"
+                            : "X episodes"}
+                      </p>
+                      <div className="flex">
+                        <p className="mb-3 mt-2 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                          {anime.nextAiringEpisode
+                            ? new Date(
+                                anime.nextAiringEpisode.airingAt * 1000
+                              ).toString() === "Invalid Date"
+                              ? ""
+                              : new Date(
                                   anime.nextAiringEpisode.airingAt * 1000
-                                ).toString() === "Invalid Date"
-                                ? ""
-                                : new Date(
-                                    anime.nextAiringEpisode.airingAt * 1000
-                                  )
-                                    .toLocaleString("en-US", {
-                                      weekday: "short",
-                                      hour: "numeric",
-                                      minute: "numeric",
-                                      hour12: true,
-                                    })
-                                    .replace(" ", ", ")
-                              : ""}
-                          </p>
-                        </div>
+                                ).toLocaleString("en-US", {
+                                  weekday: "long",
+                                  day: "numeric",
+                                  month: "long",
+                                  hour: "numeric",
+                                  minute: "numeric",
+                                  hour12: true,
+                                })
+                            : ""}
+                        </p>
                       </div>
-                    </Link>
-                  </SwiperSlide>
-                ))}
-            </Swiper>
+                    </div>
+                  </Link>
+                  <div className="meanScoreBadge flex-shrink-0 flex items-center justify-end xl:mr-10 lg:mr-10 md:mr-5 mr-2">
+                    <Badge
+                      className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
+                      variant="secondary"
+                      key={0}
+                    >
+                      <Star className="h-4 w-4 mr-1" />
+                      {anime?.meanScore
+                        ? (anime.meanScore / 20).toFixed(1)
+                        : "N/A"}
+                    </Badge>
+                  </div>
+
+                  <Link
+                    to="/anime/$id"
+                    params={{ id: anime.id }}
+                    hash={`episode-${anime.nextAiringEpisode?.episode ? `episode-${anime.nextAiringEpisode.episode - 1}` : ""}`}
+                  >
+                    <div className="flex w-full justify-end">
+                      <Button
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <p>Watch last episode</p>
+                        <Play className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </Link>
+                </div>
+              ))}
           </div>
         )}
       </div>
