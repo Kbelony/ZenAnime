@@ -31,7 +31,7 @@ const heroSection = () => {
             </div>
             <div className="flex mr-4 md:mr-10">
               <Library className="mr-2 h-4 w-4 mt-0 md:mt-1" />
-              <p>+300 animes</p>
+              <p>+4000 animes</p>
             </div>
           </div>
         </div>
