@@ -112,8 +112,7 @@ const CarouselList = () => {
       centeredSlides: false,
       spaceBetween: 30,
       loop: false,
-      // Start of Selection
-      navigation: { enabled: window.innerWidth <= 768 },
+      navigation: false,
       breakpoints: {
         1980: { slidesPerView: 8, spaceBetween: 25 },
         1200: { slidesPerView: 6, spaceBetween: 25 },
