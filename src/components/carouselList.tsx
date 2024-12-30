@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   TrendingUp,
   Gem,
@@ -14,6 +14,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { Swiper as SwiperType } from "swiper/types";
 import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
@@ -100,12 +101,19 @@ const CarouselList = () => {
   const [animeListPopular, setAnimeListPopular] = useState<Anime[]>([]);
   const [animatingIds, setAnimatingIds] = useState<Set<string>>(new Set());
 
+  const swiperResumeRef = useRef<SwiperType>();
+  const swiperPopularRef = useRef<SwiperType>();
+  const swiperTrendingRef = useRef<SwiperType>();
+  const swiperSelectionRef = useRef<SwiperType>();
+  const swiperForYouRef = useRef<SwiperType>();
+
   const settings = useMemo(
     () => ({
       centeredSlides: false,
       spaceBetween: 30,
       loop: false,
-      navigation: true,
+      // Start of Selection
+      navigation: { enabled: window.innerWidth <= 768 },
       breakpoints: {
         1980: { slidesPerView: 8, spaceBetween: 25 },
         1200: { slidesPerView: 6, spaceBetween: 25 },
@@ -382,6 +390,24 @@ const CarouselList = () => {
                   Continue watching where you left off!
                 </p>
               </div>
+              <div className="hidden md:flex ml-auto gap-3 p-4 rounded-lg">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+                  onClick={() => swiperResumeRef.current?.slidePrev()}
+                >
+                  <ChevronLeft className="h-4 w-4 text-gray-400 hover:text-blue-500" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+                  onClick={() => swiperResumeRef.current?.slideNext()}
+                >
+                  <ChevronRight className="h-4 w-4 text-gray-400 focus:text-blue-500" />
+                </Button>
+              </div>
             </div>
 
             {sectionsLoading.watched ? (
@@ -391,6 +417,9 @@ const CarouselList = () => {
                 {...settings}
                 modules={[Navigation]}
                 className="swiper-container"
+                onSwiper={(swiper) => {
+                  swiperResumeRef.current = swiper;
+                }}
               >
                 {watchedAnimeList.map((anime, index) => {
                   const watchedAnimes = JSON.parse(
@@ -512,21 +541,19 @@ const CarouselList = () => {
           <div className="hidden md:flex ml-auto gap-3 p-4 rounded-lg">
             <Button
               variant="outline"
-              // Start of Selection
-              // Start of Selection
               size="icon"
               className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
-              // onClick={() => Swiper.current?.slideNext()}
+              onClick={() => swiperPopularRef.current?.slidePrev()}
             >
               <ChevronLeft className="h-4 w-4 text-gray-400 hover:text-blue-500" />
             </Button>
             <Button
               variant="outline"
               size="icon"
-              className="rounded-full border-blue-500 bg-transparent hover:bg-transparent shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-              // onClick={() => Swiper.current.slideNext()}
+              className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+              onClick={() => swiperPopularRef.current?.slideNext()}
             >
-              <ChevronRight className="h-4 w-4 text-blue-500" />
+              <ChevronRight className="h-4 w-4 text-gray-400 focus:text-blue-500" />
             </Button>
           </div>
           <Link to="/popular">
@@ -543,6 +570,9 @@ const CarouselList = () => {
             {...settings}
             modules={[Navigation]}
             className="swiper-container"
+            onSwiper={(swiper) => {
+              swiperPopularRef.current = swiper;
+            }}
           >
             {animeListPopular.slice(0, 12).map((anime, index) => (
               <SwiperSlide key={index}>
@@ -628,8 +658,26 @@ const CarouselList = () => {
               A selection of the most trending anime of the moment
             </p>
           </div>
+          <div className="hidden md:flex ml-auto gap-3 p-4 rounded-lg">
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+              onClick={() => swiperTrendingRef.current?.slidePrev()}
+            >
+              <ChevronLeft className="h-4 w-4 text-gray-400 hover:text-blue-500" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+              onClick={() => swiperTrendingRef.current?.slideNext()}
+            >
+              <ChevronRight className="h-4 w-4 text-gray-400 focus:text-blue-500" />
+            </Button>
+          </div>
           <Link to="/trending">
-            <Button className="rounded-full mt-3 md:mt-0" variant="secondary">
+            <Button className="rounded-full mt-4" variant="secondary">
               See All <ChevronRight className="h-4 w-4" />
             </Button>
           </Link>
@@ -642,6 +690,9 @@ const CarouselList = () => {
             {...settings}
             modules={[Navigation]}
             className="swiper-container"
+            onSwiper={(swiper) => {
+              swiperTrendingRef.current = swiper;
+            }}
           >
             {animeListTrending
               .slice(0, 12)
@@ -935,9 +986,32 @@ const CarouselList = () => {
           </h3>
           <Gem className="ml-2 mt-0.5 h-5 w-5" />
         </div>
-        <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-          Here is a selection of our current favourites
-        </p>
+        <div className="flex">
+          <div>
+            <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+              Here is a selection of our current favourites
+            </p>
+          </div>
+          <div className="hidden -mt-7 md:flex ml-auto gap-3 p-4 rounded-lg">
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+              onClick={() => swiperSelectionRef.current?.slidePrev()}
+            >
+              <ChevronLeft className="h-4 w-4 text-gray-400 hover:text-blue-500" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+              onClick={() => swiperSelectionRef.current?.slideNext()}
+            >
+              <ChevronRight className="h-4 w-4 text-gray-400 focus:text-blue-500" />
+            </Button>
+          </div>
+        </div>
+
         {sectionsLoading.trending ? (
           renderSkeleton()
         ) : (
@@ -945,6 +1019,9 @@ const CarouselList = () => {
             {...settings}
             modules={[Navigation]}
             className="swiper-container"
+            onSwiper={(swiper) => {
+              swiperSelectionRef.current = swiper;
+            }}
           >
             {[...animeListTrending]
               .slice(13, 24)
@@ -1029,9 +1106,31 @@ const CarouselList = () => {
           <h3 className="font-semibold tracking-tight first:mt-0">For you </h3>
           <Wand className="ml-2 mt-0.5 h-5 w-5" />
         </div>
-        <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-          A selection just for you !
-        </p>
+        <div className="flex">
+          <div>
+            <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+              A selection just for you !
+            </p>
+          </div>
+          <div className="hidden -mt-7 md:flex ml-auto gap-3 p-4 rounded-lg">
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+              onClick={() => swiperForYouRef.current?.slidePrev()}
+            >
+              <ChevronLeft className="h-4 w-4 text-gray-400 hover:text-blue-500" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+              onClick={() => swiperForYouRef.current?.slideNext()}
+            >
+              <ChevronRight className="h-4 w-4 text-gray-400 focus:text-blue-500" />
+            </Button>
+          </div>
+        </div>
         {sectionsLoading.popular ? (
           renderSkeleton()
         ) : (
@@ -1039,6 +1138,9 @@ const CarouselList = () => {
             {...settings}
             modules={[Navigation]}
             className="swiper-container"
+            onSwiper={(swiper) => {
+              swiperForYouRef.current = swiper;
+            }}
           >
             {[...animeListPopular]
               .slice(13, 24)
