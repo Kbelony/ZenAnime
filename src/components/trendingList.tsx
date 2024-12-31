@@ -100,7 +100,7 @@ export const trendingList = () => {
             {Array.from({ length: 24 }).map((_, index) => (
               <div key={index}>
                 <Skeleton className="h-52 md:min-h-60 mb-2 md:max-h-80 portrait:min-h-10" />
-                <Skeleton className="h-4 w-36 mb-2" />
+                <Skeleton className="h-4 w-24 mb-2" />
                 <div className="flex">
                   <Skeleton className="h-4 w-16 mr-1" />
                   <Skeleton className="h-4 w-16" />
@@ -126,7 +126,7 @@ export const trendingList = () => {
                           </Badge>
                         )}
                       </div> */}
-                        <div className="meanScoreBadge lg:ml-auto">
+                        <div className="meanScoreBadge md:ml-auto lg:ml-1">
                           {anime.meanScore && (
                             <Badge className="text-xs mr-0.5 md:mr-1 cursor-default">
                               <Star className="h-4 w-4 mr-1" />

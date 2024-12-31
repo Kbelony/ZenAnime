@@ -126,7 +126,7 @@ export const popularList = () => {
                           </Badge>
                         )}
                       </div> */}
-                        <div className="meanScoreBadge lg:ml-auto">
+                        <div className="meanScoreBadge md:ml-auto lg:ml-1">
                           {anime.meanScore && (
                             <Badge className="text-xs mr-0.5 md:mr-1 cursor-default">
                               <Star className="h-4 w-4 mr-1" />

@@ -460,7 +460,8 @@ const CarouselList = () => {
                               )}
                               <Button
                                 variant="outline"
-                                className="mr-2"
+                                // Start of Selection
+                                className="mr-2 md:mr-6 landscape:mr-2 lg:mr-[2.5rem]"
                                 size="icon"
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -589,7 +590,7 @@ const CarouselList = () => {
                           </Badge>
                         )}
                       </div>
-                      <div className="meanScoreBadge lg:ml-auto">
+                      <div className="meanScoreBadge md:ml-auto lg:ml-6">
                         {anime.meanScore && (
                           <Badge
                             className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
@@ -715,7 +716,7 @@ const CarouselList = () => {
                             </Badge>
                           )}
                         </div>
-                        <div className="meanScoreBadge lg:ml-auto">
+                        <div className="meanScoreBadge md:ml-auto lg:ml-6">
                           {anime.meanScore && (
                             <Badge
                               className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
@@ -1045,7 +1046,7 @@ const CarouselList = () => {
                             </Badge>
                           )}
                         </div>
-                        <div className="meanScoreBadge lg:ml-auto">
+                        <div className="meanScoreBadge md:ml-auto lg:ml-6">
                           {anime.meanScore && (
                             <Badge
                               className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
@@ -1160,7 +1161,7 @@ const CarouselList = () => {
                             </Badge>
                           )}
                         </div>
-                        <div className="meanScoreBadge lg:ml-auto">
+                        <div className="meanScoreBadge md:ml-auto lg:ml-6">
                           {anime.meanScore && (
                             <Badge
                               className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
