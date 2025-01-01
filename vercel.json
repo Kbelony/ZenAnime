@@ -2,6 +2,7 @@
 {
   "headers": [
     {
+      "source": "/(.*)",
       "headers": [
         {
           "key": "access-control-allow-origin",
@@ -13,4 +14,4 @@
   "rewrites": [
     { "source": "/(.*)", "destination": "/" }
   ]
-  }
+}
