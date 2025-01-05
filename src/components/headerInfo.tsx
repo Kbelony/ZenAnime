@@ -179,7 +179,7 @@ const HeaderInfo = () => {
         }
 
         const responseStreaming = await fetch(
-          `/api/stream/${idGogo}/${episodeNumber}`,
+          `https://api.amvstr.me/api/v2/stream/${idGogo}/${episodeNumber}`,
           {
             signal,
             headers: {
