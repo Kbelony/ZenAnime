@@ -248,12 +248,12 @@ const CarouselList = () => {
 
       const trendingData = data_trending.results.map(
         (anime: AnimeApiResponse) => ({
-          coverImage: anime.coverImage.extraLarge,
-          title: anime.title.english,
+          coverImage: anime.coverImage?.extraLarge,
+          title: anime.title?.english || anime.title?.romaji || "Unknown Title",
           bannerImage: anime.bannerImage,
           status: anime.status,
           season: anime.season,
-          genres: anime.genres.join(", "),
+          genres: anime.genres?.join(", ") || "",
           meanScore: anime.meanScore,
           id: anime.id,
           episodes: anime.episodes,
@@ -264,10 +264,10 @@ const CarouselList = () => {
 
       const popularData = data_popular.results.map(
         (anime: AnimeApiResponse) => ({
-          coverImage: anime.coverImage.extraLarge,
-          title: anime.title.english,
+          coverImage: anime.coverImage?.extraLarge,
+          title: anime.title?.english || anime.title?.romaji || "Unknown Title",
           status: anime.status,
-          genres: anime.genres.join(", "),
+          genres: anime.genres?.join(", ") || "",
           meanScore: anime.meanScore,
           id: anime.id,
           episodes: anime.episodes,
@@ -494,7 +494,9 @@ const CarouselList = () => {
                             alt={
                               typeof anime.title === "string"
                                 ? anime.title
-                                : anime.title.english || anime.title.romaji
+                                : anime.title?.english ||
+                                  anime.title?.romaji ||
+                                  "Unknown Title"
                             }
                           />
                         </div>
@@ -510,7 +512,9 @@ const CarouselList = () => {
                         >
                           {typeof anime.title === "string"
                             ? anime.title
-                            : anime.title.english || anime.title.romaji}
+                            : anime.title?.english ||
+                              anime.title?.romaji ||
+                              "Unknown Title"}
                         </h2>
                       </Link>
                       <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -614,7 +618,9 @@ const CarouselList = () => {
                       alt={
                         typeof anime.title === "string"
                           ? anime.title
-                          : anime.title.english || anime.title.romaji
+                          : anime.title?.english ||
+                            anime.title?.romaji ||
+                            "Unknown Title"
                       }
                     />
                   </div>
@@ -630,7 +636,9 @@ const CarouselList = () => {
                   >
                     {typeof anime.title === "string"
                       ? anime.title
-                      : anime.title.english || anime.title.romaji}
+                      : anime.title?.english ||
+                        anime.title?.romaji ||
+                        "Unknown Title"}
                   </h2>
                 </Link>
                 <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -740,7 +748,9 @@ const CarouselList = () => {
                         alt={
                           typeof anime.title === "string"
                             ? anime.title
-                            : anime.title.english || anime.title.romaji
+                            : anime.title?.english ||
+                              anime.title?.romaji ||
+                              "Unknown Title"
                         }
                       />
                     </div>
@@ -756,7 +766,9 @@ const CarouselList = () => {
                     >
                       {typeof anime.title === "string"
                         ? anime.title
-                        : anime.title.english || anime.title.romaji}
+                        : anime.title?.english ||
+                          anime.title?.romaji ||
+                          "Unknown Title"}
                     </h2>
                   </Link>
                   <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -802,7 +814,9 @@ const CarouselList = () => {
                           alt={
                             typeof anime.title === "string"
                               ? anime.title
-                              : anime.title.english
+                              : anime.title?.english ||
+                                anime.title?.romaji ||
+                                "Unknown Title"
                           }
                         />
                         <h2
@@ -817,7 +831,9 @@ const CarouselList = () => {
                         >
                           {typeof anime.title === "string"
                             ? anime.title
-                            : anime.title.english}{" "}
+                            : anime.title?.english ||
+                              anime.title?.romaji ||
+                              "Unknown Title"}
                           Trailer
                         </h2>
                         <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -908,14 +924,18 @@ const CarouselList = () => {
                       alt={
                         typeof anime.title === "string"
                           ? anime.title
-                          : anime.title.english || anime.title.romaji
+                          : anime.title?.english ||
+                            anime.title?.romaji ||
+                            "Unknown Title"
                       }
                     />
                     <div className="flex flex-col flex-1">
                       <h2 className="scroll-m-20 text-sm font-extrabold tracking-tight lg:text-base">
                         {typeof anime.title === "string"
                           ? anime.title
-                          : anime.title.english || anime.title.romaji}
+                          : anime.title?.english ||
+                            anime.title?.romaji ||
+                            "Unknown Title"}
                       </h2>
                       <p className=" mt-3 text-sm">
                         {anime.nextAiringEpisode
@@ -1070,7 +1090,9 @@ const CarouselList = () => {
                         alt={
                           typeof anime.title === "string"
                             ? anime.title
-                            : anime.title?.english || anime.title?.romaji
+                            : anime.title?.english ||
+                              anime.title?.romaji ||
+                              "Unknown Title"
                         }
                       />
                     </div>
@@ -1086,7 +1108,9 @@ const CarouselList = () => {
                     >
                       {typeof anime.title === "string"
                         ? anime.title
-                        : anime.title?.english || anime.title?.romaji}
+                        : anime.title?.english ||
+                          anime.title?.romaji ||
+                          "Unknown Title"}
                     </h2>
                   </Link>
                   <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -1185,7 +1209,9 @@ const CarouselList = () => {
                         alt={
                           typeof anime.title === "string"
                             ? anime.title
-                            : anime.title.english || anime.title.romaji
+                            : anime.title?.english ||
+                              anime.title?.romaji ||
+                              "Unknown Title"
                         }
                       />
                     </div>
@@ -1201,7 +1227,9 @@ const CarouselList = () => {
                     >
                       {typeof anime.title === "string"
                         ? anime.title
-                        : anime.title.english || anime.title.romaji}
+                        : anime.title?.english ||
+                          anime.title?.romaji ||
+                          "Unknown Title"}
                     </h2>
                   </Link>
                   <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
