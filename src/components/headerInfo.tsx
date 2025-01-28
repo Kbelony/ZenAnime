@@ -156,6 +156,19 @@ const HeaderInfo = () => {
           return;
         }
 
+        // Nettoyer le cache lors du changement d'anime
+        const previousAnimeId = sessionStorage.getItem("current_anime_id");
+        if (previousAnimeId !== currentAnimeId) {
+          Object.keys(sessionStorage).forEach((key) => {
+            if (key.startsWith("streaming_")) {
+              sessionStorage.removeItem(key);
+            }
+          });
+          sessionStorage.setItem("current_anime_id", currentAnimeId);
+          setStreamingUrl("");
+          setAvailablePlayers([]);
+        }
+
         // Préchargement optimisé des épisodes
         const preloadEpisodes = (currentEpisode: string) => {
           const episodeNum = parseInt(currentEpisode);
