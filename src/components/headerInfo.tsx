@@ -278,7 +278,7 @@ const HeaderInfo = () => {
         const responseStreaming = await fetch(
           `https://api.amvstr.me/api/v2/stream/${idGogo}/${episodeNumber}`,
           {
-            signal: streamingController.signal,
+            signal,
             headers: {
               Accept: "application/json",
               "Cache-Control": "no-cache",
