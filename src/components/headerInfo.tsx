@@ -156,7 +156,7 @@ const HeaderInfo = () => {
           return;
         }
 
-        // Nettoyer le cache lors du changement d'anime
+        // Réinitialiser l'état lors du changement d'anime
         const previousAnimeId = sessionStorage.getItem("current_anime_id");
         if (previousAnimeId !== currentAnimeId) {
           Object.keys(sessionStorage).forEach((key) => {
@@ -167,126 +167,8 @@ const HeaderInfo = () => {
           sessionStorage.setItem("current_anime_id", currentAnimeId);
           setStreamingUrl("");
           setAvailablePlayers([]);
+          setSelectedPlayer("0");
         }
-
-        // Préchargement optimisé des épisodes
-        const preloadEpisodes = (currentEpisode: string) => {
-          const episodeNum = parseInt(currentEpisode);
-          const episodesToPreload = [
-            (episodeNum + 1).toString(),
-            (episodeNum + 2).toString(),
-            (episodeNum - 1).toString(),
-          ];
-
-          episodesToPreload.forEach((episode) => {
-            const episodeNum = parseInt(episode);
-            if (episodeNum > 0) {
-              const cacheKey = `streaming_${currentAnimeId}_${idGogo}_${episode}`;
-              if (!sessionStorage.getItem(cacheKey)) {
-                fetch(
-                  `https://api.amvstr.me/api/v2/stream/${idGogo}/${episode}`,
-                  {
-                    headers: {
-                      Accept: "application/json",
-                      "Cache-Control": "no-cache",
-                      Priority: "low",
-                      "X-Requested-With": "XMLHttpRequest",
-                    },
-                    keepalive: true,
-                  }
-                )
-                  .then((res) => res.json())
-                  .then((data) => {
-                    if (data && (data.iframe?.length || data.nspl)) {
-                      sessionStorage.setItem(
-                        cacheKey,
-                        JSON.stringify({
-                          players: data,
-                          timestamp: Date.now(),
-                          animeId: currentAnimeId,
-                        })
-                      );
-                    }
-                  })
-                  .catch(() => {});
-              }
-            }
-          });
-        };
-
-        const cacheKey = `streaming_${currentAnimeId}_${idGogo}_${episodeNumber}`;
-        const cachedData = sessionStorage.getItem(cacheKey);
-
-        if (cachedData) {
-          try {
-            const data = JSON.parse(cachedData);
-            const cacheAge = Date.now() - (data.timestamp || 0);
-            const isSameAnime = data.animeId === currentAnimeId;
-
-            if (data.players && cacheAge < 3600000 && isSameAnime) {
-              const dataStreaming = data.players;
-              const iframeSources =
-                dataStreaming.iframe?.map((player: any, index: number) => ({
-                  id: `iframe-${index}`,
-                  name: player.name || `Lecteur ${index + 1}`,
-                  url: player.iframe,
-                })) || [];
-
-              const nsplSources = dataStreaming.nspl
-                ? [
-                    {
-                      id: "nspl-main",
-                      name: "nspl Main",
-                      url: dataStreaming.nspl.main,
-                    },
-                    {
-                      id: "nspl-backup",
-                      name: "nspl Backup",
-                      url: dataStreaming.nspl.backup,
-                    },
-                  ]
-                : [];
-
-              const validPlayers = [...nsplSources, ...iframeSources].filter(
-                (player) => {
-                  try {
-                    new URL(player.url);
-                    return true;
-                  } catch {
-                    return false;
-                  }
-                }
-              );
-
-              if (validPlayers.length > 0) {
-                setAvailablePlayers(validPlayers);
-                const defaultPlayer =
-                  validPlayers.find((player) => player.id === "nspl-main") ||
-                  validPlayers[0];
-                const iframeUrl = new URL(defaultPlayer.url);
-                iframeUrl.searchParams.set("pause", "1");
-                setStreamingUrl(iframeUrl.toString());
-                setSelectedPlayer(defaultPlayer.id.toString());
-                setIframeLoading(false);
-
-                requestIdleCallback(() => preloadEpisodes(episodeNumber));
-                return;
-              }
-            }
-          } catch (e) {
-            sessionStorage.removeItem(cacheKey);
-          }
-        }
-
-        // Nettoyer le cache des anciennes séries
-        Object.keys(sessionStorage).forEach((key) => {
-          if (key.startsWith("streaming_") && !key.includes(currentAnimeId)) {
-            sessionStorage.removeItem(key);
-          }
-        });
-
-        const streamingController = new AbortController();
-        const timeoutId = setTimeout(() => streamingController.abort(), 10000);
 
         const responseStreaming = await fetch(
           `https://api.amvstr.me/api/v2/stream/${idGogo}/${episodeNumber}`,
@@ -294,15 +176,15 @@ const HeaderInfo = () => {
             signal,
             headers: {
               Accept: "application/json",
-              "Cache-Control": "no-cache",
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
               Priority: "high",
               "X-Requested-With": "XMLHttpRequest",
             },
-            keepalive: true,
+            cache: "no-store",
           }
         );
-
-        clearTimeout(timeoutId);
 
         if (!responseStreaming.ok) {
           throw new Error(`Erreur serveur: ${responseStreaming.status}`);
@@ -314,13 +196,12 @@ const HeaderInfo = () => {
           throw new Error("No source available for this episode");
         }
 
-        const iframeSources = dataStreaming.iframe.map(
-          (player: any, index: number) => ({
+        const iframeSources =
+          dataStreaming.iframe?.map((player: any, index: number) => ({
             id: `iframe-${index}`,
             name: player.name || `Lecteur ${index + 1}`,
             url: player.iframe,
-          })
-        );
+          })) || [];
 
         const nsplSources = dataStreaming.nspl
           ? [
@@ -352,9 +233,8 @@ const HeaderInfo = () => {
           throw new Error("No valid source available");
         }
 
+        // Mettre à jour les players et l'URL seulement après avoir reçu les nouvelles données
         setAvailablePlayers(validPlayers);
-
-        // Définir nspl Main comme lecteur par défaut
         const defaultPlayer =
           validPlayers.find((player) => player.id === "nspl-main") ||
           validPlayers[0];
@@ -362,18 +242,6 @@ const HeaderInfo = () => {
         iframeUrl.searchParams.set("pause", "1");
         setStreamingUrl(iframeUrl.toString());
         setSelectedPlayer(defaultPlayer.id.toString());
-
-        // Mettre en cache avec timestamp et animeId
-        sessionStorage.setItem(
-          cacheKey,
-          JSON.stringify({
-            players: dataStreaming,
-            timestamp: Date.now(),
-            animeId: currentAnimeId,
-          })
-        );
-
-        requestIdleCallback(() => preloadEpisodes(episodeNumber));
       } catch (error) {
         if (error instanceof Error) {
           if (error.name === "AbortError") return;
@@ -875,9 +743,7 @@ const HeaderInfo = () => {
             </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <p className="text-lg text-gray-500">
-                Content currently unavailable
-              </p>
+              <Skeleton className="w-full h-full rounded-lg" />
             </div>
           )}
         </div>
