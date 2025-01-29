@@ -214,7 +214,7 @@ const HeaderInfo = () => {
             !player.name.toLowerCase().includes("doodstream")
         );
 
-        // Ajouter le lecteur ReactPlayer
+        // Ajouter le lecteur ReactPlayer avec configuration optimisée pour mobile
         const reactPlayerSource = dataStreaming.stream?.multi?.backup?.url
           ? [
               {
@@ -762,9 +762,21 @@ const HeaderInfo = () => {
                 height="100%"
                 controls={true}
                 playing={true}
+                playsinline={true}
                 config={{
                   file: {
                     forceHLS: true,
+                    hlsOptions: {
+                      enableWorker: true,
+                      autoStartLoad: true,
+                      startPosition: -1,
+                      debug: false,
+                    },
+                    attributes: {
+                      crossOrigin: "anonymous",
+                      playsInline: true,
+                      preload: "auto",
+                    },
                   },
                 }}
               />
@@ -776,7 +788,7 @@ const HeaderInfo = () => {
                 src={streamingUrl}
                 className="w-full h-full rounded-lg"
                 allowFullScreen
-                allow="fullscreen"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 referrerPolicy="no-referrer"
                 loading="lazy"
                 scrolling="no"
