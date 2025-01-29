@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "./ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import ReactPlayer from "react-player";
 
 const StarRating = ({ rating }: { rating: number }) => {
   const stars = useMemo(() => {
@@ -213,6 +214,18 @@ const HeaderInfo = () => {
             !player.name.toLowerCase().includes("doodstream")
         );
 
+        // Ajouter le lecteur ReactPlayer
+        const reactPlayerSource = dataStreaming.stream?.multi?.backup?.url
+          ? [
+              {
+                id: "react-player",
+                name: "Direct Player",
+                url: dataStreaming.stream.multi.backup.url,
+                isM3U8: true,
+              },
+            ]
+          : [];
+
         const nsplSources = dataStreaming.nspl
           ? [
               {
@@ -235,6 +248,7 @@ const HeaderInfo = () => {
 
         // Combiner les sources dans l'ordre souhaité
         const validPlayers = [
+          ...reactPlayerSource,
           ...nsplSources,
           ...(doodstreamPlayer ? [doodstreamPlayer] : []),
           ...nsplMain,
@@ -252,9 +266,10 @@ const HeaderInfo = () => {
           throw new Error("No valid source available");
         }
 
-        // Mettre à jour les players et l'URL avec nspl Backup comme lecteur par défaut
+        // Mettre à jour les players et l'URL avec Direct Player comme lecteur par défaut
         setAvailablePlayers(validPlayers);
         const defaultPlayer =
+          validPlayers.find((player) => player.id === "react-player") ||
           validPlayers.find((player) => player.id === "nspl-backup") ||
           validPlayers[0];
         const iframeUrl = new URL(defaultPlayer.url);
@@ -738,6 +753,21 @@ const HeaderInfo = () => {
                   Try Again
                 </Button>
               </div>
+            </div>
+          ) : selectedPlayer === "react-player" ? (
+            <div className="w-full h-full rounded-lg overflow-hidden">
+              <ReactPlayer
+                url={streamingUrl}
+                width="100%"
+                height="100%"
+                controls={true}
+                playing={true}
+                config={{
+                  file: {
+                    forceHLS: true,
+                  },
+                }}
+              />
             </div>
           ) : streamingUrl && localStorage.getItem("idGogo") !== "undefined" ? (
             <div className="w-full h-full">
