@@ -203,13 +203,18 @@ const HeaderInfo = () => {
             url: player.iframe,
           })) || [];
 
+        // Filtrer pour avoir Doodstream
+        const doodstreamPlayer = iframeSources.find(
+          (player: { name: string }) =>
+            player.name.toLowerCase().includes("doodstream")
+        );
+        const otherPlayers = iframeSources.filter(
+          (player: { name: string }) =>
+            !player.name.toLowerCase().includes("doodstream")
+        );
+
         const nsplSources = dataStreaming.nspl
           ? [
-              {
-                id: "nspl-main",
-                name: "nspl Main",
-                url: dataStreaming.nspl.main,
-              },
               {
                 id: "nspl-backup",
                 name: "nspl Backup",
@@ -218,25 +223,39 @@ const HeaderInfo = () => {
             ]
           : [];
 
-        const validPlayers = [...nsplSources, ...iframeSources].filter(
-          (player) => {
-            try {
-              new URL(player.url);
-              return true;
-            } catch {
-              return false;
-            }
+        const nsplMain = dataStreaming.nspl
+          ? [
+              {
+                id: "nspl-main",
+                name: "nspl Main",
+                url: dataStreaming.nspl.main,
+              },
+            ]
+          : [];
+
+        // Combiner les sources dans l'ordre souhaité
+        const validPlayers = [
+          ...nsplSources,
+          ...(doodstreamPlayer ? [doodstreamPlayer] : []),
+          ...nsplMain,
+          ...otherPlayers,
+        ].filter((player) => {
+          try {
+            new URL(player.url);
+            return true;
+          } catch {
+            return false;
           }
-        );
+        });
 
         if (!validPlayers.length) {
           throw new Error("No valid source available");
         }
 
-        // Mettre à jour les players et l'URL seulement après avoir reçu les nouvelles données
+        // Mettre à jour les players et l'URL avec nspl Backup comme lecteur par défaut
         setAvailablePlayers(validPlayers);
         const defaultPlayer =
-          validPlayers.find((player) => player.id === "nspl-main") ||
+          validPlayers.find((player) => player.id === "nspl-backup") ||
           validPlayers[0];
         const iframeUrl = new URL(defaultPlayer.url);
         iframeUrl.searchParams.set("pause", "1");
