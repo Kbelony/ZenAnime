@@ -724,7 +724,7 @@ const CarouselList = () => {
                             </Badge>
                           )}
                         </div>
-                        <div className="meanScoreBadge md:ml-auto lg:ml-6">
+                        <div className="meanScoreBadge md:ml-auto lg:ml-4">
                           {anime.meanScore && (
                             <Badge
                               className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
@@ -1066,7 +1066,7 @@ const CarouselList = () => {
                             </Badge>
                           )}
                         </div>
-                        <div className="meanScoreBadge md:ml-auto lg:ml-6">
+                        <div className="meanScoreBadge md:ml-auto lg:ml-4">
                           {anime.meanScore && (
                             <Badge
                               className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"

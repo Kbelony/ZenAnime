@@ -20,7 +20,6 @@ import ReactPlayer from "react-player";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 
 const StarRating = ({ rating }: { rating: number }) => {
   const stars = useMemo(() => {
@@ -752,7 +751,7 @@ const HeaderInfo = () => {
         </div>
       </div>
 
-      <div className="mt-6 aspect-video pb-8 px-5 md:px-8">
+      <div className="mt-6 aspect-video pb-5 px-5 md:px-8">
         <div className="relative w-full h-full">
           {iframeLoading && (
             <div className="absolute inset-0 z-10 bg-background">
@@ -781,7 +780,7 @@ const HeaderInfo = () => {
                 width="100%"
                 height="100%"
                 controls={true}
-                playing={true}
+                playing={false}
                 playsinline={true}
                 config={{
                   file: {
@@ -833,7 +832,7 @@ const HeaderInfo = () => {
       {/* Relations Section */}
       {animeInfo?.relation && animeInfo.relation.length > 0 && (
         <div className="relations px-5 md:px-8">
-          <div className="flex mt-2 md:mt-8">
+          <div className="flex mt-2 md:mt-5">
             <h3 className="font-semibold tracking-tight first:mt-0">
               Related Anime
             </h3>
@@ -881,11 +880,32 @@ const HeaderInfo = () => {
           >
             {animeInfo.relation
               .filter(
-                (anime) => anime.type === "ANIME" || anime.format === "MOVIE"
+                (anime) =>
+                  (anime.type === "ANIME" || anime.format === "MOVIE") &&
+                  anime.status !== "NOT_YET_RELEASED"
               )
+              .sort((a, b) => (b.averageScore || 0) - (a.averageScore || 0))
               .map((anime, index) => (
                 <SwiperSlide key={index}>
-                  <Link to="/anime/$id" params={{ id: anime.id }}>
+                  <div
+                    onClick={() => {
+                      const currentPath = window.location.pathname;
+                      const newPath = `/anime/${anime.id}`;
+
+                      if (currentPath !== newPath) {
+                        // Nettoyer le sessionStorage pour forcer le rechargement des données
+                        Object.keys(sessionStorage).forEach((key) => {
+                          if (key.startsWith("anime_data_")) {
+                            sessionStorage.removeItem(key);
+                          }
+                        });
+
+                        // Recharger la page avec le nouvel ID
+                        window.location.href = newPath;
+                      }
+                    }}
+                    className="cursor-pointer"
+                  >
                     <div className="relative overflow-hidden rounded-lg group">
                       <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
                         <div className="statusBadge hidden md:block">
@@ -905,7 +925,7 @@ const HeaderInfo = () => {
                               variant="secondary"
                             >
                               <Star className="h-4 w-4 mr-1" />
-                              {(anime.averageScore / 10).toFixed(1)}
+                              {(anime.averageScore / 20).toFixed(1)}
                             </Badge>
                           )}
                         </div>
@@ -928,10 +948,10 @@ const HeaderInfo = () => {
                     >
                       {anime.title.english || anime.title.romaji}
                     </h2>
-                  </Link>
-                  <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                    {anime.format} • {anime.episodes || "?"} episodes
-                  </p>
+                    <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                      {anime.format} • {anime.episodes || "?"} episodes
+                    </p>
+                  </div>
                 </SwiperSlide>
               ))}
           </Swiper>
