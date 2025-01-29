@@ -136,6 +136,7 @@ const HeaderInfo = () => {
   const [error, setError] = useState<string | null>(null);
   const [iframeLoading, setIframeLoading] = useState(true);
   const swiperRelationsRef = useRef<any>(null);
+  const [playerErrors, setPlayerErrors] = useState<Record<string, boolean>>({});
 
   const updateWatchHistory = useCallback((animeId: string, _animeData: any) => {
     const existingAnimes = JSON.parse(
@@ -273,10 +274,10 @@ const HeaderInfo = () => {
 
         // Combiner les sources dans l'ordre souhaité
         const validPlayers = [
-          ...reactPlayerSource,
           ...nsplSources,
-          ...(doodstreamPlayer ? [doodstreamPlayer] : []),
           ...nsplMain,
+          ...(doodstreamPlayer ? [doodstreamPlayer] : []),
+          ...reactPlayerSource,
           ...otherPlayers,
         ].filter((player) => {
           try {
@@ -291,16 +292,11 @@ const HeaderInfo = () => {
           throw new Error("No valid source available");
         }
 
-        // Mettre à jour les players et l'URL avec Direct Player comme lecteur par défaut
+        // Sélectionner le premier lecteur compatible par défaut
+        const defaultPlayer = validPlayers[0];
         setAvailablePlayers(validPlayers);
-        const defaultPlayer =
-          validPlayers.find((player) => player.id === "react-player") ||
-          validPlayers.find((player) => player.id === "nspl-backup") ||
-          validPlayers[0];
-        const iframeUrl = new URL(defaultPlayer.url);
-        iframeUrl.searchParams.set("pause", "1");
-        setStreamingUrl(iframeUrl.toString());
-        setSelectedPlayer(defaultPlayer.id.toString());
+        setStreamingUrl(defaultPlayer.url);
+        setSelectedPlayer(defaultPlayer.id);
       } catch (error) {
         if (error instanceof Error) {
           if (error.name === "AbortError") return;
@@ -749,7 +745,12 @@ const HeaderInfo = () => {
             <SelectContent>
               {availablePlayers.map((player) => (
                 <SelectItem key={player.id} value={player.id}>
-                  {player.name}
+                  <span className="flex items-center justify-between w-full">
+                    <span>{player.name}</span>
+                    <span className="ml-2">
+                      {playerErrors[player.id] ? "❌" : "✅"}
+                    </span>
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -792,6 +793,9 @@ const HeaderInfo = () => {
                   file: {
                     forceHLS: true,
                     hlsOptions: {
+                      xhrSetup: function (xhr: XMLHttpRequest) {
+                        xhr.withCredentials = false;
+                      },
                       enableWorker: true,
                       autoStartLoad: true,
                       startPosition: -1,
@@ -803,6 +807,29 @@ const HeaderInfo = () => {
                       preload: "auto",
                     },
                   },
+                }}
+                onError={(e) => {
+                  console.error("ReactPlayer error:", e);
+                  setPlayerErrors((prev) => ({
+                    ...prev,
+                    "react-player": true,
+                  }));
+                  // Basculer vers un lecteur de secours si ReactPlayer échoue
+                  if (availablePlayers.length > 1) {
+                    const backupPlayer = availablePlayers.find(
+                      (p) => p.id !== "react-player" && !playerErrors[p.id]
+                    );
+                    if (backupPlayer) {
+                      setSelectedPlayer(backupPlayer.id);
+                      setStreamingUrl(backupPlayer.url.toString());
+                    }
+                  }
+                }}
+                onReady={() => {
+                  setPlayerErrors((prev) => ({
+                    ...prev,
+                    "react-player": false,
+                  }));
                 }}
               />
             </div>
@@ -823,7 +850,17 @@ const HeaderInfo = () => {
                 onLoad={() => {
                   setTimeout(() => {
                     setIframeLoading(false);
+                    setPlayerErrors((prev) => ({
+                      ...prev,
+                      [selectedPlayer]: false,
+                    }));
                   }, 500);
+                }}
+                onError={() => {
+                  setPlayerErrors((prev) => ({
+                    ...prev,
+                    [selectedPlayer]: true,
+                  }));
                 }}
               />
             </div>
