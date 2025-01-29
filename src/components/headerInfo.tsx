@@ -3,7 +3,7 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/rules-of-hooks */
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import HeaderInfoSkeleton from "./headerInfoSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { ArrowBigDownDash, Star, StarHalf } from "lucide-react";
@@ -17,6 +17,10 @@ import {
 import { Button } from "./ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReactPlayer from "react-player";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 const StarRating = ({ rating }: { rating: number }) => {
   const stars = useMemo(() => {
@@ -83,6 +87,21 @@ const HeaderInfo = () => {
     id_provider?: {
       idGogo: string;
     };
+    relation?: {
+      id: string;
+      type: string;
+      format: string;
+      status: string;
+      averageScore: number;
+      coverImage: {
+        large: string;
+      };
+      title: {
+        english: string;
+        romaji: string;
+      };
+      episodes: number;
+    }[];
   }
 
   interface EpisodeItem {
@@ -111,6 +130,7 @@ const HeaderInfo = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [iframeLoading, setIframeLoading] = useState(true);
+  const swiperRelationsRef = useRef<any>(null);
 
   const updateWatchHistory = useCallback((animeId: string, _animeData: any) => {
     const existingAnimes = JSON.parse(
@@ -809,6 +829,114 @@ const HeaderInfo = () => {
           )}
         </div>
       </div>
+
+      {/* Relations Section */}
+      {animeInfo?.relation && animeInfo.relation.length > 0 && (
+        <div className="relations px-5 md:px-8">
+          <div className="flex mt-2 md:mt-8">
+            <h3 className="font-semibold tracking-tight first:mt-0">
+              Related Anime
+            </h3>
+          </div>
+          <div className="flex">
+            <div>
+              <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                Other seasons and related anime
+              </p>
+            </div>
+            <div className="hidden -mt-7 md:flex ml-auto gap-3 p-4 rounded-lg">
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+                onClick={() => swiperRelationsRef.current?.slidePrev()}
+              >
+                <ChevronLeft className="h-4 w-4 text-gray-400 hover:text-blue-500" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+                onClick={() => swiperRelationsRef.current?.slideNext()}
+              >
+                <ChevronRight className="h-4 w-4 text-gray-400 focus:text-blue-500" />
+              </Button>
+            </div>
+          </div>
+
+          <Swiper
+            spaceBetween={20}
+            slidesPerView={2}
+            breakpoints={{
+              640: { slidesPerView: 3 },
+              768: { slidesPerView: 4 },
+              1024: { slidesPerView: 5 },
+              1280: { slidesPerView: 6 },
+            }}
+            modules={[Navigation]}
+            className="swiper-container"
+            onSwiper={(swiper) => {
+              swiperRelationsRef.current = swiper;
+            }}
+          >
+            {animeInfo.relation
+              .filter(
+                (anime) => anime.type === "ANIME" || anime.format === "MOVIE"
+              )
+              .map((anime, index) => (
+                <SwiperSlide key={index}>
+                  <Link to="/anime/$id" params={{ id: anime.id }}>
+                    <div className="relative overflow-hidden rounded-lg group">
+                      <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
+                        <div className="statusBadge hidden md:block">
+                          {anime.status && (
+                            <Badge
+                              className="text-xs mr-0.5 md:mr-1 cursor-default h-6 flex items-center"
+                              variant="secondary"
+                            >
+                              {anime.status}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="meanScoreBadge md:ml-auto lg:ml-6">
+                          {anime.averageScore && (
+                            <Badge
+                              className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
+                              variant="secondary"
+                            >
+                              <Star className="h-4 w-4 mr-1" />
+                              {(anime.averageScore / 10).toFixed(1)}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <img
+                        className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
+                        src={anime.coverImage.large}
+                        alt={anime.title.english || anime.title.romaji}
+                      />
+                    </div>
+                    <h2
+                      className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {anime.title.english || anime.title.romaji}
+                    </h2>
+                  </Link>
+                  <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                    {anime.format} • {anime.episodes || "?"} episodes
+                  </p>
+                </SwiperSlide>
+              ))}
+          </Swiper>
+        </div>
+      )}
     </div>
   );
 };
