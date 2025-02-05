@@ -89,6 +89,39 @@ interface WatchedAnime {
   timestamp: number;
 }
 
+// Fonction utilitaire pour vérifier si un anime est valide
+const isValidAnime = (anime: any) => {
+  return anime && 
+    // Vérification minimale des propriétés essentielles
+    anime.id && 
+    // Vérification du coverImage de manière plus permissive
+    (anime.coverImage || anime.image) &&
+    // Vérification du title de manière plus permissive
+    (anime.title || anime.name) &&
+    // Ne pas bloquer sur les autres propriétés optionnelles
+    typeof anime !== 'undefined';
+};
+
+// Fonction utilitaire pour obtenir le titre sécurisé
+const getTitle = (title: any) => {
+  if (!title) return "Unknown Title";
+  if (typeof title === 'string') return title;
+  if (title.english) return title.english;
+  if (title.romaji) return title.romaji;
+  if (title.userPreferred) return title.userPreferred;
+  return "Unknown Title";
+};
+
+// Fonction utilitaire pour obtenir l'image sécurisée
+const getCoverImage = (coverImage: any) => {
+  if (!coverImage) return '/path/to/fallback/image.jpg';
+  if (typeof coverImage === 'string') return coverImage;
+  if (coverImage.extraLarge) return coverImage.extraLarge;
+  if (coverImage.large) return coverImage.large;
+  if (coverImage.medium) return coverImage.medium;
+  return '/path/to/fallback/image.jpg';
+};
+
 const CarouselList = () => {
   const [sectionsLoading, setSectionsLoading] = useState({
     watched: true,
@@ -420,16 +453,13 @@ const CarouselList = () => {
                   swiperResumeRef.current = swiper;
                 }}
               >
-                {watchedAnimeList.map((anime, index) => {
+                {watchedAnimeList.filter(isValidAnime).map((anime, index) => {
                   const watchedAnimes = JSON.parse(
                     localStorage.getItem("watchedAnimes") || "[]"
                   );
                   const watchedAnime = watchedAnimes.find(
                     (watched: { id: string }) => watched.id === String(anime.id)
                   );
-
-                  // console.log("ID from API:", anime.id);
-                  // console.log("Watched anime data:", watchedAnime);
 
                   return (
                     <SwiperSlide
@@ -448,19 +478,17 @@ const CarouselList = () => {
                         <div className="relative overflow-hidden rounded-lg group">
                           <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
                             <div className="statusBadge flex justify-between w-full">
-                              {anime.status && (
+                              {anime.score?.decimalScore && (
                                 <Badge
                                   className="text-xs mr-0.5 md:mr-1 cursor-default h-6 flex items-center"
                                   variant="secondary"
-                                  key={0}
                                 >
                                   <Star className="h-4 w-4 mr-1" />
-                                  {(anime?.score?.decimalScore / 2).toFixed(1)}
+                                  {(anime.score.decimalScore / 2).toFixed(1)}
                                 </Badge>
                               )}
                               <Button
                                 variant="outline"
-                                // Start of Selection
                                 className="mr-2 md:mr-6 landscape:mr-2 lg:mr-[2.5rem]"
                                 size="icon"
                                 onClick={(e) => {
@@ -471,33 +499,11 @@ const CarouselList = () => {
                                 <X />
                               </Button>
                             </div>
-                            {/* <div className="meanScoreBadge lg:ml-auto">
-                          {anime.meanScore && (
-                            <Badge
-                              className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
-                              variant="secondary"
-                              key={0}
-                            >
-                              <Star className="h-4 w-4 mr-1" />
-                              {anime?.score?.decimalScore}
-                            </Badge>
-                          )}
-                        </div> */}
                           </div>
                           <img
                             className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
-                            src={
-                              typeof anime.coverImage === "string"
-                                ? anime.coverImage
-                                : anime.coverImage.large
-                            }
-                            alt={
-                              typeof anime.title === "string"
-                                ? anime.title
-                                : anime.title?.english ||
-                                  anime.title?.romaji ||
-                                  "Unknown Title"
-                            }
+                            src={getCoverImage(anime.coverImage)}
+                            alt={getTitle(anime.title)}
                           />
                         </div>
                         <h2
@@ -510,11 +516,7 @@ const CarouselList = () => {
                             overflow: "hidden",
                           }}
                         >
-                          {typeof anime.title === "string"
-                            ? anime.title
-                            : anime.title?.english ||
-                              anime.title?.romaji ||
-                              "Unknown Title"}
+                          {getTitle(anime.title)}
                         </h2>
                       </Link>
                       <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -578,78 +580,64 @@ const CarouselList = () => {
               swiperPopularRef.current = swiper;
             }}
           >
-            {animeListPopular.slice(0, 12).map((anime, index) => (
-              <SwiperSlide key={index}>
-                <Link to="/anime/$id" params={{ id: anime.id }}>
-                  <div className="relative overflow-hidden rounded-lg group">
-                    <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
-                      <div className="statusBadge hidden md:block">
-                        {anime.status && (
-                          <Badge
-                            className="text-xs mr-0.5 md:mr-1 cursor-default h-6 flex items-center"
-                            variant="secondary"
-                            key={0}
-                          >
-                            {anime.status}
-                          </Badge>
-                        )}
+            {[...animeListPopular]
+              .slice(0, 12)
+              .filter(isValidAnime)
+              .map((anime, index) => (
+                <SwiperSlide key={index}>
+                  <Link to="/anime/$id" params={{ id: anime.id }}>
+                    <div className="relative overflow-hidden rounded-lg group">
+                      <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
+                        <div className="statusBadge hidden md:block">
+                          {anime.status && (
+                            <Badge
+                              className="text-xs mr-0.5 md:mr-1 cursor-default h-6 flex items-center"
+                              variant="secondary"
+                            >
+                              {anime.status}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="meanScoreBadge md:ml-auto lg:ml-6">
+                          {anime.meanScore && (
+                            <Badge
+                              className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
+                              variant="secondary"
+                            >
+                              <Star className="h-4 w-4 mr-1" />
+                              {(anime.meanScore / 20).toFixed(1)}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      <div className="meanScoreBadge md:ml-auto lg:ml-6">
-                        {anime.meanScore && (
-                          <Badge
-                            className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
-                            variant="secondary"
-                            key={0}
-                          >
-                            <Star className="h-4 w-4 mr-1" />
-                            {(anime.meanScore / 20).toFixed(1)}
-                          </Badge>
-                        )}
-                      </div>
+                      <img
+                        className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
+                        src={getCoverImage(anime.coverImage)}
+                        alt={getTitle(anime.title)}
+                      />
                     </div>
-                    <img
-                      className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
-                      src={
-                        typeof anime.coverImage === "string"
-                          ? anime.coverImage
-                          : anime.coverImage.extraLarge ||
-                            anime.coverImage.large
-                      }
-                      alt={
-                        typeof anime.title === "string"
-                          ? anime.title
-                          : anime.title?.english ||
-                            anime.title?.romaji ||
-                            "Unknown Title"
-                      }
-                    />
-                  </div>
-                  <h2
-                    className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base"
-                    style={{
-                      whiteSpace: "pre-wrap",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 1,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {typeof anime.title === "string"
-                      ? anime.title
-                      : anime.title?.english ||
-                        anime.title?.romaji ||
-                        "Unknown Title"}
-                  </h2>
-                </Link>
-                <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                  {anime.episodes === null
-                    ? "X episodes"
-                    : anime.episodes === 1
-                      ? `Movie`
-                      : `${anime.episodes} episodes`}
-                </p>
-              </SwiperSlide>
-            ))}
+                    <h2
+                      className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {getTitle(anime.title)}
+                    </h2>
+                  </Link>
+                  <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                    {anime.episodes === null
+                      ? "X episodes"
+                      : anime.episodes === 1
+                        ? `Movie`
+                        : `${anime.episodes} episodes`}
+                  </p>
+                </SwiperSlide>
+              ))}
           </Swiper>
         )}
       </div>
@@ -718,7 +706,6 @@ const CarouselList = () => {
                             <Badge
                               className="text-xs mr-0.5 md:mr-1 cursor-default h-6 flex items-center"
                               variant="secondary"
-                              key={0}
                             >
                               {anime.status}
                             </Badge>
@@ -729,7 +716,6 @@ const CarouselList = () => {
                             <Badge
                               className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
                               variant="secondary"
-                              key={0}
                             >
                               <Star className="h-4 w-4 mr-1" />
                               {(anime.meanScore / 20).toFixed(1)}
@@ -739,19 +725,8 @@ const CarouselList = () => {
                       </div>
                       <img
                         className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
-                        src={
-                          typeof anime.coverImage === "string"
-                            ? anime.coverImage
-                            : anime.coverImage.extraLarge ||
-                              anime.coverImage.large
-                        }
-                        alt={
-                          typeof anime.title === "string"
-                            ? anime.title
-                            : anime.title?.english ||
-                              anime.title?.romaji ||
-                              "Unknown Title"
-                        }
+                        src={getCoverImage(anime.coverImage)}
+                        alt={getTitle(anime.title)}
                       />
                     </div>
                     <h2
@@ -764,11 +739,7 @@ const CarouselList = () => {
                         overflow: "hidden",
                       }}
                     >
-                      {typeof anime.title === "string"
-                        ? anime.title
-                        : anime.title?.english ||
-                          anime.title?.romaji ||
-                          "Unknown Title"}
+                      {getTitle(anime.title)}
                     </h2>
                   </Link>
                   <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -811,13 +782,7 @@ const CarouselList = () => {
                         <img
                           className="w-full landscape:w-svw rounded-lg"
                           src={anime.trailer?.thumbnail}
-                          alt={
-                            typeof anime.title === "string"
-                              ? anime.title
-                              : anime.title?.english ||
-                                anime.title?.romaji ||
-                                "Unknown Title"
-                          }
+                          alt={getTitle(anime.title)}
                         />
                         <h2
                           className="scroll-m-20 mt-1 text-sm font-extrabold tracking-tight lg:text-base mb-2"
@@ -829,11 +794,7 @@ const CarouselList = () => {
                             overflow: "hidden",
                           }}
                         >
-                          {typeof anime.title === "string"
-                            ? anime.title
-                            : anime.title?.english ||
-                              anime.title?.romaji ||
-                              "Unknown Title"}
+                          {getTitle(anime.title)}
                           Trailer
                         </h2>
                         <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -916,26 +877,12 @@ const CarouselList = () => {
                   >
                     <img
                       className="rounded-lg h-32 object-cover"
-                      src={
-                        typeof anime.coverImage === "string"
-                          ? anime.coverImage
-                          : anime.coverImage.large
-                      }
-                      alt={
-                        typeof anime.title === "string"
-                          ? anime.title
-                          : anime.title?.english ||
-                            anime.title?.romaji ||
-                            "Unknown Title"
-                      }
+                      src={getCoverImage(anime.coverImage)}
+                      alt={getTitle(anime.title)}
                     />
                     <div className="flex flex-col flex-1">
                       <h2 className="scroll-m-20 text-sm font-extrabold tracking-tight lg:text-base">
-                        {typeof anime.title === "string"
-                          ? anime.title
-                          : anime.title?.english ||
-                            anime.title?.romaji ||
-                            "Unknown Title"}
+                        {getTitle(anime.title)}
                       </h2>
                       <p className=" mt-3 text-sm">
                         {anime.nextAiringEpisode
@@ -970,7 +917,6 @@ const CarouselList = () => {
                     <Badge
                       className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
                       variant="secondary"
-                      key={0}
                     >
                       <Star className="h-4 w-4 mr-1" />
                       {anime?.meanScore
@@ -1060,7 +1006,6 @@ const CarouselList = () => {
                             <Badge
                               className="text-xs mr-0.5 md:mr-1 cursor-default h-6 flex items-center"
                               variant="secondary"
-                              key={0}
                             >
                               {anime.status}
                             </Badge>
@@ -1071,7 +1016,6 @@ const CarouselList = () => {
                             <Badge
                               className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
                               variant="secondary"
-                              key={0}
                             >
                               <Star className="h-4 w-4 mr-1" />
                               {(anime.meanScore / 20).toFixed(1)}
@@ -1081,19 +1025,8 @@ const CarouselList = () => {
                       </div>
                       <img
                         className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
-                        src={
-                          typeof anime.coverImage === "string"
-                            ? anime.coverImage
-                            : anime.coverImage?.large ||
-                              anime.coverImage?.extraLarge
-                        }
-                        alt={
-                          typeof anime.title === "string"
-                            ? anime.title
-                            : anime.title?.english ||
-                              anime.title?.romaji ||
-                              "Unknown Title"
-                        }
+                        src={getCoverImage(anime.coverImage)}
+                        alt={getTitle(anime.title)}
                       />
                     </div>
                     <h2
@@ -1106,11 +1039,7 @@ const CarouselList = () => {
                         overflow: "hidden",
                       }}
                     >
-                      {typeof anime.title === "string"
-                        ? anime.title
-                        : anime.title?.english ||
-                          anime.title?.romaji ||
-                          "Unknown Title"}
+                      {getTitle(anime.title)}
                     </h2>
                   </Link>
                   <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -1179,7 +1108,6 @@ const CarouselList = () => {
                             <Badge
                               className="text-xs mr-0.5 md:mr-1 cursor-default h-6 flex items-center"
                               variant="secondary"
-                              key={0}
                             >
                               {anime.status}
                             </Badge>
@@ -1190,7 +1118,6 @@ const CarouselList = () => {
                             <Badge
                               className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
                               variant="secondary"
-                              key={0}
                             >
                               <Star className="h-4 w-4 mr-1" />
                               {(anime.meanScore / 20).toFixed(1)}
@@ -1200,19 +1127,8 @@ const CarouselList = () => {
                       </div>
                       <img
                         className="w-[148.797px] h-[208px] md:w-[184px] md:h-[260.398px] xl:w-[204px] xl:h-[260.398px] rounded-lg transition-transform duration-300 group-hover:scale-110 object-cover"
-                        src={
-                          typeof anime.coverImage === "string"
-                            ? anime.coverImage
-                            : anime.coverImage.large ||
-                              anime.coverImage.extraLarge
-                        }
-                        alt={
-                          typeof anime.title === "string"
-                            ? anime.title
-                            : anime.title?.english ||
-                              anime.title?.romaji ||
-                              "Unknown Title"
-                        }
+                        src={getCoverImage(anime.coverImage)}
+                        alt={getTitle(anime.title)}
                       />
                     </div>
                     <h2
@@ -1225,11 +1141,7 @@ const CarouselList = () => {
                         overflow: "hidden",
                       }}
                     >
-                      {typeof anime.title === "string"
-                        ? anime.title
-                        : anime.title?.english ||
-                          anime.title?.romaji ||
-                          "Unknown Title"}
+                      {getTitle(anime.title)}
                     </h2>
                   </Link>
                   <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
