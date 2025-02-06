@@ -4,7 +4,7 @@ import SearchBar from "./searchBar";
 
 const heroSection = () => {
   return (
-    <div className="hero_section mt-8 lg:mt-28 xl:mt-20 2xl:mt-28 xl:mb-24">
+    <div className="hero_section mt-8 lg:mt-28 xl:mt-32 2xl:mt-28 xl:mb-24">
       <div className="flex text-center flex-col items-center justify-center">
         <Badge className="mb-4" variant="outline">
           Created by a enthusiast 👨🏾‍💻
@@ -15,8 +15,9 @@ const heroSection = () => {
           <span className="dark:text-white"> : Modern, Ad-Free Streaming</span>
         </h1>
         <p className="mb-7 text-sm px-10 md:px-52 text-slate-800 dark:text-white">
-          Lorem ipsum dolor sit, amet consectetur adipisicing elit. Maiores, ex
-          necessitatibus. Nihil facilis atque eaque voluptate nam quis sapiente
+          Discover a vast collection of anime series and movies, all in one
+          place. Stream your favorite shows in high quality, with a clean and
+          modern interface designed for the best viewing experience
         </p>
         <SearchBar />
         <div className="icon mt-6 flex justify-center text-xs md:text-base	">
