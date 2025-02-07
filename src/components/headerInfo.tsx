@@ -100,6 +100,7 @@ const HeaderInfo = () => {
       averageScore: number;
       coverImage: {
         large: string;
+        color: string;
       };
       title: {
         english: string;
@@ -494,13 +495,22 @@ const HeaderInfo = () => {
   return (
     <div>
       <div className="header_mobile md:hidden">
-        <img
-          className="object-cover mobile_img"
-          src={animeInfo?.bannerImage}
-          alt=""
-          onContextMenu={(e) => e.preventDefault()}
-          draggable="false"
-        />
+        {animeInfo?.bannerImage ? (
+          <img
+            className="object-cover mobile_img"
+            src={animeInfo.bannerImage}
+            alt=""
+            onContextMenu={(e) => e.preventDefault()}
+            draggable="false"
+          />
+        ) : (
+          <div
+            className="mobile_img"
+            style={{
+              backgroundColor: animeInfo?.coverImage?.color || "#900000",
+            }}
+          />
+        )}
         <div className="mt-6 text-center info_mobile ">
           <div className="flex justify-center meanScoreBadge mb-3">
             <Badge
@@ -537,11 +547,21 @@ const HeaderInfo = () => {
         </div>
       </div>
       <div className="header_desktop hidden md:block">
-        <img
-          className="object-cover blur_img"
-          src={animeInfo?.bannerImage}
-          alt=""
-        />
+        {animeInfo?.bannerImage ? (
+          <img
+            className="object-cover blur_img"
+            src={animeInfo.bannerImage}
+            alt=""
+          />
+        ) : (
+          <div
+            className="blur_img"
+            style={{
+              backgroundColor: animeInfo?.coverImage?.color || "#900000",
+            }}
+          />
+        )}
+
         <div className="absolute top-20 p-4">
           <div className="flex ml-7 desktop_img">
             <img
