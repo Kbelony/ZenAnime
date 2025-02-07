@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Tv, RefreshCw, Library } from "lucide-react";
 import SearchBar from "./searchBar";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const heroSection = () => {
   return (
@@ -22,13 +23,95 @@ const heroSection = () => {
         <SearchBar />
         <div className="icon mt-6 flex justify-center text-xs md:text-base	">
           <div className="grid content-center grid-flow-col">
-            <div className="flex mr-4 ml-6 md:ml-20 md:mr-10">
+            <div className="flex  mr-4 ml-6 md:ml-20 md:mr-10 relative group">
               <Tv className="mr-2 h-4 w-4 mt-0 md:mt-1" />
-              <p>Ad-free</p>
+              <p
+                className="cursor-pointer hover:text-blue-500 underline transition-colors"
+                onClick={(e) => {
+                  const alert =
+                    e.currentTarget.parentElement?.querySelector(
+                      ".mobile-alert"
+                    );
+                  if (alert) {
+                    alert.classList.remove("hidden");
+                    alert.classList.add("opacity-100", "animate-fadeIn");
+                    setTimeout(() => {
+                      alert.classList.remove("animate-fadeIn");
+                      alert.classList.add("animate-fadeOut");
+                      setTimeout(() => {
+                        alert.classList.add("hidden");
+                        alert.classList.remove(
+                          "opacity-100",
+                          "animate-fadeOut"
+                        );
+                      }, 500);
+                    }, 4000);
+                  }
+                }}
+              >
+                <span className="">*</span> Ad-free
+              </p>
+              <div className="hidden group-hover:block md:group-hover:block absolute top-full -left-1 mt-2 z-10">
+                <Alert>
+                  <AlertDescription className="whitespace-nowrap">
+                    Some video players may contain ads that are beyond our
+                    control.
+                  </AlertDescription>
+                </Alert>
+              </div>
+              <div className="mobile-alert hidden md:hidden absolute top-full left-1/2 -translate-x-8 mt-2 z-10 w-80 transition-all duration-500">
+                <Alert>
+                  <AlertDescription className="px-4 whitespace-normal">
+                    Some video players may contain ads that are beyond our
+                    control.
+                  </AlertDescription>
+                </Alert>
+              </div>
             </div>
-            <div className="flex mr-3 md:mr-7">
+            <div className="flex mr-3 md:mr-7 relative group">
               <RefreshCw className="mr-2 h-4 w-4 mt-0 md:mt-1" />
-              <p>Updated instantly</p>
+              <p
+                className="cursor-pointer hover:text-blue-500 underline transition-colors"
+                onClick={(e) => {
+                  const alert =
+                    e.currentTarget.parentElement?.querySelector(
+                      ".mobile-alert"
+                    );
+                  if (alert) {
+                    alert.classList.remove("hidden");
+                    alert.classList.add("opacity-100", "animate-fadeIn");
+                    setTimeout(() => {
+                      alert.classList.remove("animate-fadeIn");
+                      alert.classList.add("animate-fadeOut");
+                      setTimeout(() => {
+                        alert.classList.add("hidden");
+                        alert.classList.remove(
+                          "opacity-100",
+                          "animate-fadeOut"
+                        );
+                      }, 500);
+                    }, 4000);
+                  }
+                }}
+              >
+                <span className="">*</span> Updated instantly
+              </p>
+              <div className="hidden group-hover:block md:group-hover:block absolute top-full -left-64 mt-2 z-10">
+                <Alert>
+                  <AlertDescription className="whitespace-nowrap">
+                    We rely on external services to provide anime releases, so
+                    release times may not be under our control.
+                  </AlertDescription>
+                </Alert>
+              </div>
+              <div className="mobile-alert hidden md:hidden absolute top-full left-1/2 -translate-x-1/2 mt-2 z-10 w-80 transition-all duration-500">
+                <Alert>
+                  <AlertDescription className="px-4 whitespace-normal">
+                    We rely on external services to provide anime releases, so
+                    release times may not be under our control.
+                  </AlertDescription>
+                </Alert>
+              </div>
             </div>
             <div className="flex mr-4 md:mr-10">
               <Library className="mr-2 h-4 w-4 mt-0 md:mt-1" />
