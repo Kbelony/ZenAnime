@@ -122,6 +122,14 @@ const getCoverImage = (coverImage: any) => {
   return '/path/to/fallback/image.jpg';
 };
 
+function chunk<T>(array: T[], size: number): T[][] {
+  const chunked: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunked.push(array.slice(i, i + size));
+  }
+  return chunked;
+}
+
 const CarouselList = () => {
   const [sectionsLoading, setSectionsLoading] = useState({
     watched: true,
@@ -139,6 +147,7 @@ const CarouselList = () => {
   const swiperTrendingRef = useRef<SwiperType>();
   const swiperSelectionRef = useRef<SwiperType>();
   const swiperForYouRef = useRef<SwiperType>();
+  const swiperUpcomingRef = useRef<SwiperType>();
 
   const settings = useMemo(
     () => ({
@@ -165,8 +174,28 @@ const CarouselList = () => {
       centeredSlides: true,
       spaceBetween: 30,
       loop: false,
-      navigation: true,
+      navigation: false,
       slidesPerView: 1,
+      autoplay: {
+        delay: 5000,
+        disableOnInteraction: false,
+      },
+    }),
+    []
+  );
+
+  const settingsUpcoming = useMemo(
+    () => ({
+      slidesPerView: 1,
+      slidesPerGroup: 1,
+      direction: "horizontal" as const,
+      spaceBetween: 30,
+      navigation: false,
+      allowTouchMove: false,
+      loop: true,
+      speed: 800,
+      effect: "slide",
+      watchSlidesProgress: true,
     }),
     []
   );
@@ -839,110 +868,146 @@ const CarouselList = () => {
           </h3>
           <Clapperboard className="ml-2 mt-0.5 h-5 w-5" />
         </div>
-        <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-          Episodes that should be released soon
-        </p>
+        <div className="flex">
+          <div>
+            <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+              Episodes that should be released soon
+            </p>
+          </div>
+          <div className="hidden -mt-7 md:flex ml-auto gap-3 p-4 rounded-lg">
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+              onClick={() => swiperUpcomingRef.current?.slidePrev()}
+            >
+              <ChevronLeft className="h-4 w-4 text-gray-400 hover:text-blue-500" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
+              onClick={() => swiperUpcomingRef.current?.slideNext()}
+            >
+              <ChevronRight className="h-4 w-4 text-gray-400 focus:text-blue-500" />
+            </Button>
+          </div>
+        </div>
         {sectionsLoading.trending ? (
           renderSkeleton()
         ) : (
-          <div className="flex flex-col gap-4">
-            {[...animeListTrending]
-              .slice(0, 30)
-              .filter(
-                (anime) =>
-                  anime.nextAiringEpisode !== null &&
-                  anime.nextAiringEpisode?.episode !== undefined &&
-                  anime.bannerImage !== null &&
-                  anime.id !==
-                    [...animeListTrending]
-                      .slice(0, 30)
-                      .filter(
-                        (a) =>
-                          a.nextAiringEpisode !== null &&
-                          a.nextAiringEpisode?.episode !== undefined &&
-                          a.bannerImage !== null
-                      )[0]?.id
-              )
-              .sort((a, b) => {
-                const timeA = a.nextAiringEpisode?.airingAt || 0;
-                const timeB = b.nextAiringEpisode?.airingAt || 0;
-                return timeA - timeB;
-              })
-              .map((anime, index) => (
-                <div key={index} className="flex items-center p-2 gap-2">
-                  <Link
-                    to="/anime/$id"
-                    params={{ id: anime.id }}
-                    className="flex items-center gap-4 w-full"
-                  >
-                    <img
-                      className="rounded-lg h-32 object-cover"
-                      src={getCoverImage(anime.coverImage)}
-                      alt={getTitle(anime.title)}
-                    />
-                    <div className="flex flex-col flex-1">
-                      <h2 className="scroll-m-20 text-sm font-extrabold tracking-tight lg:text-base">
-                        {getTitle(anime.title)}
-                      </h2>
-                      <p className=" mt-3 text-sm">
-                        {anime.nextAiringEpisode
-                          ? `Episode  ${anime.nextAiringEpisode.episode}`
-                          : anime.nextAiringEpisode === undefined
-                            ? "episode this week"
-                            : "X episodes"}
-                      </p>
-                      <div className="flex">
-                        <p className="mb-3 mt-2 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                          {anime.nextAiringEpisode
-                            ? new Date(
-                                anime.nextAiringEpisode.airingAt * 1000
-                              ).toString() === "Invalid Date"
-                              ? ""
-                              : new Date(
-                                  anime.nextAiringEpisode.airingAt * 1000
-                                ).toLocaleString("en-US", {
-                                  weekday: "long",
-                                  day: "numeric",
-                                  month: "long",
-                                  hour: "numeric",
-                                  minute: "numeric",
-                                  hour12: true,
-                                })
-                            : ""}
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                  <div className="meanScoreBadge flex-shrink-0 flex items-center justify-end xl:mr-10 lg:mr-10 md:mr-5 mr-2">
-                    <Badge
-                      className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
-                      variant="secondary"
-                    >
-                      <Star className="h-4 w-4 mr-1" />
-                      {anime?.meanScore
-                        ? (anime.meanScore / 20).toFixed(1)
-                        : "N/A"}
-                    </Badge>
-                  </div>
-
-                  <Link
-                    to="/anime/$id"
-                    params={{ id: anime.id }}
-                    hash={`episode-${anime.nextAiringEpisode?.episode ? anime.nextAiringEpisode.episode - 1 : ""}`}
-                  >
-                    <div className="flex w-full justify-end">
-                      <Button
-                        variant="outline"
-                        className="flex items-center gap-2"
+          <Swiper
+            {...settingsUpcoming}
+            modules={[Navigation]}
+            className="!h-[650px]"
+            onSwiper={(swiper) => {
+              swiperUpcomingRef.current = swiper;
+            }}
+          >
+            {chunk(
+              [...animeListTrending]
+                .slice(0, 28)
+                .filter(
+                  (anime) =>
+                    anime.nextAiringEpisode !== null &&
+                    anime.nextAiringEpisode?.episode !== undefined &&
+                    anime.bannerImage !== null &&
+                    anime.id !==
+                      [...animeListTrending]
+                        .slice(0, 28)
+                        .filter(
+                          (a) =>
+                            a.nextAiringEpisode !== null &&
+                            a.nextAiringEpisode?.episode !== undefined &&
+                            a.bannerImage !== null
+                        )[0]?.id
+                )
+                .sort((a, b) => {
+                  const timeA = a.nextAiringEpisode?.airingAt || 0;
+                  const timeB = b.nextAiringEpisode?.airingAt || 0;
+                  return timeA - timeB;
+                }),
+              4
+            ).map((animeGroup, groupIndex) => (
+              <SwiperSlide key={groupIndex} className="!h-full">
+                <div className="flex flex-col gap-4 h-full">
+                  {animeGroup.map((anime, index) => (
+                    <div key={index} className="flex items-center p-2 gap-2">
+                      <Link
+                        to="/anime/$id"
+                        params={{ id: anime.id }}
+                        className="flex items-center gap-4 w-full"
                       >
-                        <p>Watch last episode</p>
-                        <Play className="h-4 w-4" />
-                      </Button>
+                        <img
+                          className="rounded-lg h-32 object-cover"
+                          src={getCoverImage(anime.coverImage)}
+                          alt={getTitle(anime.title)}
+                        />
+                        <div className="flex flex-col flex-1">
+                          <h2 className="scroll-m-20 text-sm font-extrabold tracking-tight lg:text-base">
+                            {getTitle(anime.title)}
+                          </h2>
+                          <p className="mt-3 text-sm">
+                            {anime.nextAiringEpisode
+                              ? `Episode ${anime.nextAiringEpisode.episode}`
+                              : anime.nextAiringEpisode === undefined
+                                ? "episode this week"
+                                : "X episodes"}
+                          </p>
+                          <div className="flex">
+                            <p className="mb-3 mt-2 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                              {anime.nextAiringEpisode
+                                ? new Date(
+                                    anime.nextAiringEpisode.airingAt * 1000
+                                  ).toString() === "Invalid Date"
+                                  ? ""
+                                  : new Date(
+                                      anime.nextAiringEpisode.airingAt * 1000
+                                    ).toLocaleString("en-US", {
+                                      weekday: "long",
+                                      day: "numeric",
+                                      month: "long",
+                                      hour: "numeric",
+                                      minute: "numeric",
+                                      hour12: true,
+                                    })
+                                : ""}
+                            </p>
+                          </div>
+                        </div>
+                      </Link>
+                      <div className="meanScoreBadge flex-shrink-0 flex items-center justify-end xl:mr-10 lg:mr-10 md:mr-5 mr-2">
+                        <Badge
+                          className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
+                          variant="secondary"
+                        >
+                          <Star className="h-4 w-4 mr-1" />
+                          {anime?.meanScore
+                            ? (anime.meanScore / 20).toFixed(1)
+                            : "N/A"}
+                        </Badge>
+                      </div>
+                      <Link
+                        to="/anime/$id"
+                        params={{ id: anime.id }}
+                        hash={`episode-${anime.nextAiringEpisode?.episode ? anime.nextAiringEpisode.episode - 1 : ""}`}
+                      >
+                        <div className="flex w-full justify-end">
+                          <Button
+                            variant="outline"
+                            className="flex items-center gap-2"
+                          >
+                            <p>Watch last episode</p>
+                            <Play className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </Link>
                     </div>
-                  </Link>
+                  ))}
                 </div>
-              ))}
-          </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
         )}
       </div>
       <div className="selection">
