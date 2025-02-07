@@ -1,6 +1,6 @@
 import HeaderInfo from "@/components/headerInfo";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import axios from "axios";
 
 export const Route = createFileRoute("/anime/$id")({
@@ -9,7 +9,6 @@ export const Route = createFileRoute("/anime/$id")({
 
 function AnimeDetails() {
   const { id } = Route.useParams();
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -21,7 +20,6 @@ function AnimeDetails() {
         const cachedTitle = sessionStorage.getItem(`anime_title_${id}`);
         if (cachedTitle) {
           document.title = cachedTitle;
-          setIsLoading(false);
           return;
         }
 
@@ -39,8 +37,6 @@ function AnimeDetails() {
           error
         );
         document.title = "Anime Details";
-      } finally {
-        setIsLoading(false);
       }
     };
 
@@ -51,8 +47,6 @@ function AnimeDetails() {
       document.title = "ZenAnime";
     };
   }, [id]);
-
-  if (isLoading) return null;
 
   return (
     <div>
