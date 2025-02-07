@@ -15,9 +15,10 @@ import {
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Swiper as SwiperType } from "swiper/types";
-import { Navigation } from "swiper/modules";
+import { Navigation, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
+import "swiper/css/autoplay";
 import { Link } from "@tanstack/react-router";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -91,21 +92,23 @@ interface WatchedAnime {
 
 // Fonction utilitaire pour vérifier si un anime est valide
 const isValidAnime = (anime: any) => {
-  return anime && 
+  return (
+    anime &&
     // Vérification minimale des propriétés essentielles
-    anime.id && 
+    anime.id &&
     // Vérification du coverImage de manière plus permissive
     (anime.coverImage || anime.image) &&
     // Vérification du title de manière plus permissive
     (anime.title || anime.name) &&
     // Ne pas bloquer sur les autres propriétés optionnelles
-    typeof anime !== 'undefined';
+    typeof anime !== "undefined"
+  );
 };
 
 // Fonction utilitaire pour obtenir le titre sécurisé
 const getTitle = (title: any) => {
   if (!title) return "Unknown Title";
-  if (typeof title === 'string') return title;
+  if (typeof title === "string") return title;
   if (title.english) return title.english;
   if (title.romaji) return title.romaji;
   if (title.userPreferred) return title.userPreferred;
@@ -114,12 +117,12 @@ const getTitle = (title: any) => {
 
 // Fonction utilitaire pour obtenir l'image sécurisée
 const getCoverImage = (coverImage: any) => {
-  if (!coverImage) return '/path/to/fallback/image.jpg';
-  if (typeof coverImage === 'string') return coverImage;
+  if (!coverImage) return "/path/to/fallback/image.jpg";
+  if (typeof coverImage === "string") return coverImage;
   if (coverImage.extraLarge) return coverImage.extraLarge;
   if (coverImage.large) return coverImage.large;
   if (coverImage.medium) return coverImage.medium;
-  return '/path/to/fallback/image.jpg';
+  return "/path/to/fallback/image.jpg";
 };
 
 function chunk<T>(array: T[], size: number): T[][] {
@@ -173,12 +176,13 @@ const CarouselList = () => {
     () => ({
       centeredSlides: true,
       spaceBetween: 30,
-      loop: false,
+      loop: true,
       navigation: false,
       slidesPerView: 1,
       autoplay: {
-        delay: 5000,
-        disableOnInteraction: false,
+        delay: 7000,
+        disableOnInteraction: true,
+        pauseOnMouseEnter: true,
       },
     }),
     []
@@ -796,13 +800,18 @@ const CarouselList = () => {
         ) : (
           <Swiper
             {...settingsTrailer}
-            modules={[Navigation]}
+            modules={[Navigation, Autoplay]}
             className="swiper-container"
           >
             {[...animeListTrending]
               .slice(0, 24)
               .sort(() => Math.random() - 0.5)
-              .filter((anime) => anime.trailer && anime.trailer.thumbnail)
+              .filter(
+                (anime) =>
+                  anime.trailer &&
+                  anime.trailer.thumbnail &&
+                  anime.status === "RELEASING"
+              )
               .map((anime, index) => (
                 <SwiperSlide key={index}>
                   <AlertDialog>
@@ -823,8 +832,7 @@ const CarouselList = () => {
                             overflow: "hidden",
                           }}
                         >
-                          {getTitle(anime.title)}
-                          Trailer
+                          {getTitle(anime.title)} - Trailer
                         </h2>
                         <p className="mb-3 mt-1 text-xs md:text-sm text-slate-600 dark:text-slate-400">
                           Season : {anime.season}
