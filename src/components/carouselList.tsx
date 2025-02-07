@@ -845,9 +845,8 @@ const CarouselList = () => {
                           Are you absolutely sure?
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                          This action cannot be undone. This will permanently
-                          delete your account and remove your data from our
-                          servers.
+                          You will be redirected to YouTube. Do you want to
+                          continue?
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
