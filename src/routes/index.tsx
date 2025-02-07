@@ -6,7 +6,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const homepage = () => {
   return (
-    <div>
+    <div className="mt-2 dark:bg-grid bg-[size:5vw_5vw]">
       <HeroSection />
       <CarouselList />
     </div>

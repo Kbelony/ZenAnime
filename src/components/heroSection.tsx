@@ -39,9 +39,12 @@ const heroSection = () => {
   };
 
   return (
-    <div className="hero_section mt-8 lg:mt-28 xl:mt-32 2xl:mt-28 xl:mb-24">
-      <div className="flex text-center flex-col items-center justify-center">
-        <Badge className="mb-4" variant="outline">
+    <div className="hero_section ">
+      <div className="flex text-center flex-col items-center justify-center ">
+        <Badge
+          className="mb-4 mt-8 lg:mt-28 xl:mt-32 2xl:mt-28 xl:mb-24"
+          variant="outline"
+        >
           Created by a enthusiast 👨🏾‍💻
         </Badge>
         <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl md:text-4xl xl:text-6xl 2xl:text-7xl  px-4 mb-4 md:px-40 xl:px-40 portrait:px-10">

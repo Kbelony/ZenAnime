@@ -98,6 +98,12 @@ export default {
   			'accordion-up': 'accordion-up 0.2s ease-out',
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out'
+  		},
+  		backgroundImage: {
+  			'grid': `
+  				linear-gradient(to right, rgba(30,30,30,.75) 1px, transparent 1px),
+  				linear-gradient(to bottom, rgba(30,30,30,.75) 1px, transparent 1px)
+  			`
   		}
   	}
   },
