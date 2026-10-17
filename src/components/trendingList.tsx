@@ -1,67 +1,30 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-hooks/rules-of-hooks */
 import { Star, TrendingUp } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Skeleton } from "./ui/skeleton";
 import { Badge } from "./ui/badge";
+import { fetchTrending, toListAnime } from "@/lib/anilist";
 
 export const trendingList = () => {
   interface Anime {
-    nextAiringEpisode: {
-      airingAt: number;
-      episode: number;
-    } | null;
-    episodes: number;
+    episodes: number | null;
     coverImage: string;
-    season: string;
     title: string;
-    status: string;
-    genres: string;
     meanScore: number;
-    trailer: {
-      thumbnail: string;
-      id: string;
-    };
     id: string;
-    bannerImage: string;
   }
   const [loading, setLoading] = useState(false);
   const [animeListTrending, setAnimeListTrending] = useState<Anime[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = 250;
+  const [totalPages, setTotalPages] = useState(250);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response_trending = await fetch(
-        `https://api.amvstr.me/api/v2/trending?p=${currentPage}`
-      );
-      const data_trending = await response_trending.json();
-      console.log("trending : ", data_trending);
-      const trendingData = data_trending.results.map(
-        (anime: {
-          coverImage: {
-            extraLarge: string;
-          };
-          title: { english: string };
-          status: string;
-          genres: string[];
-          meanScore: string;
-          episodes: number;
-          id: string;
-          animeId: number;
-        }) => ({
-          coverImage: anime.coverImage.extraLarge,
-          title: anime.title.english,
-          status: anime.status || "Unknown",
-          genres: anime.genres.join(", "),
-          meanScore: anime.meanScore ? anime.meanScore.toString() : null,
-          id: anime.id,
-          episodes: anime.episodes,
-        })
-      );
-      setAnimeListTrending(trendingData);
+      const data = await fetchTrending(currentPage, 24);
+      setAnimeListTrending(data.results.map(toListAnime));
+      setTotalPages(Math.max(1, data.pageInfo.lastPage || 1));
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -114,25 +77,18 @@ export const trendingList = () => {
           <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 portrait:landscape:grid-cols-3 portrait:lg:grid-cols-4 portrait:md:grid-cols-3 portrait:grid-cols-2 gap-4">
             {animeListTrending
               .filter((anime) => anime.title !== null)
-              .map((anime, index) => (
-                <div key={index}>
+              .map((anime) => (
+                <div key={anime.id}>
                   <Link to="/anime/$id" params={{ id: anime.id }}>
                     <div className="relative">
                       <div className="imgBadges flex absolute top-2 w-full px-2 z-10">
-                        {/* <div className="statusBadge hidden md:block">
-                        {anime.status && (
-                          <Badge className="text-xs mr-0.5 md:mr-1 cursor-default">
-                            {anime.status}
-                          </Badge>
-                        )}
-                      </div> */}
                         <div className="meanScoreBadge md:ml-auto lg:ml-1">
-                          {anime.meanScore && (
+                          {anime.meanScore ? (
                             <Badge className="text-xs mr-0.5 md:mr-1 cursor-default">
                               <Star className="h-4 w-4 mr-1" />
                               {(anime.meanScore / 20).toFixed(1)}
                             </Badge>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                       <img

@@ -1,31 +1,17 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/rules-of-hooks */
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import HeaderInfoSkeleton from "./headerInfoSkeleton";
 import { Badge } from "@/components/ui/badge";
-import { ArrowBigDownDash, Star, StarHalf, Magnet } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "./ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import ReactPlayer from "react-player";
+import { Star, StarHalf, Magnet } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
-// import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Accordion,
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import { fetchAnimeInfo, getMediaTitle } from "@/lib/anilist";
 
 const StarRating = ({ rating }: { rating: number }) => {
   const stars = useMemo(() => {
@@ -60,8 +46,24 @@ const StarRating = ({ rating }: { rating: number }) => {
 };
 
 const HeaderInfo = () => {
+  interface RelationAnime {
+    id: string;
+    type: string;
+    format: string;
+    status: string;
+    averageScore: number;
+    coverImage: {
+      large: string;
+      color: string;
+    };
+    title: {
+      english: string;
+      romaji: string;
+    };
+    episodes: number;
+  }
+
   interface Anime {
-    number: string;
     coverImage: {
       large: string;
       medium: string;
@@ -83,63 +85,20 @@ const HeaderInfo = () => {
     };
     nextair: {
       episode: string;
-    };
+    } | null;
     id: number;
     season: string;
     episodes: number;
-    meanScore: number;
     description: string;
-    id_provider?: {
-      idGogo: string;
-    };
-    relation?: {
-      id: string;
-      type: string;
-      format: string;
-      status: string;
-      averageScore: number;
-      coverImage: {
-        large: string;
-        color: string;
-      };
-      title: {
-        english: string;
-        romaji: string;
-      };
-      episodes: number;
-    }[];
-  }
-
-  interface EpisodeItem {
-    title: string;
-    image: string;
-    status: string;
-    season: string;
-    meanScore: number;
-    number: string | number;
-    id: string;
+    relation?: RelationAnime[];
   }
 
   const [animeInfo, setAnimeInfo] = useState<Anime | null>(null);
-  const [episodeList, setEpisodeList] = useState<EpisodeItem[]>([]);
-  const [streamingUrl, setStreamingUrl] = useState<string>("");
-  const [selectedEpisode, setSelectedEpisode] = useState<string>("1");
-  const [availablePlayers, setAvailablePlayers] = useState<
-    Array<{
-      id: string;
-      url: string | URL;
-      name: string;
-      iframe: string;
-    }>
-  >([]);
-  const [selectedPlayer, setSelectedPlayer] = useState<string>("0");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [iframeLoading, setIframeLoading] = useState(true);
   const swiperRelationsRef = useRef<any>(null);
-  const [playerErrors, setPlayerErrors] = useState<Record<string, boolean>>({});
 
-  const updateWatchHistory = useCallback((animeId: string, _animeData: any) => {
+  const updateWatchHistory = useCallback((animeId: string) => {
     const existingAnimes = JSON.parse(
       localStorage.getItem("watchedAnimes") || "[]"
     );
@@ -163,267 +122,100 @@ const HeaderInfo = () => {
     }
 
     existingAnimes.unshift(animeEntry);
-
-    const limitedAnimes = existingAnimes.slice(0, 20);
-    localStorage.setItem("watchedAnimes", JSON.stringify(limitedAnimes));
+    localStorage.setItem(
+      "watchedAnimes",
+      JSON.stringify(existingAnimes.slice(0, 20))
+    );
   }, []);
-
-  const fetchStreamingData = useCallback(
-    async (episodeNumber: string, signal?: AbortSignal) => {
-      try {
-        setIframeLoading(true);
-        setError(null);
-
-        const idGogo =
-          animeInfo?.id_provider?.idGogo || localStorage.getItem("idGogo");
-        const currentAnimeId = window.location.pathname.split("/")[2];
-
-        if (!idGogo || idGogo === "undefined") {
-          setError("No source available for this episode");
-          setIframeLoading(false);
-          return;
-        }
-
-        // Réinitialiser l'état lors du changement d'anime
-        const previousAnimeId = sessionStorage.getItem("current_anime_id");
-        if (previousAnimeId !== currentAnimeId) {
-          Object.keys(sessionStorage).forEach((key) => {
-            if (key.startsWith("streaming_")) {
-              sessionStorage.removeItem(key);
-            }
-          });
-          sessionStorage.setItem("current_anime_id", currentAnimeId);
-          setStreamingUrl("");
-          setAvailablePlayers([]);
-          setSelectedPlayer("0");
-        }
-
-        const responseStreaming = await fetch(
-          `https://api.amvstr.me/api/v2/stream/${idGogo}/${episodeNumber}`,
-          {
-            signal,
-            headers: {
-              Accept: "application/json",
-              "Cache-Control": "no-cache, no-store, must-revalidate",
-              Pragma: "no-cache",
-              Expires: "0",
-              Priority: "high",
-              "X-Requested-With": "XMLHttpRequest",
-            },
-            cache: "no-store",
-          }
-        );
-
-        if (!responseStreaming.ok) {
-          throw new Error(`Erreur serveur: ${responseStreaming.status}`);
-        }
-
-        const dataStreaming = await responseStreaming.json();
-
-        if (!dataStreaming?.iframe?.length && !dataStreaming?.nspl) {
-          throw new Error("No source available for this episode");
-        }
-
-        const iframeSources =
-          dataStreaming.iframe?.map((player: any, index: number) => ({
-            id: `iframe-${index}`,
-            name: player.name || `Lecteur ${index + 1}`,
-            url: player.iframe,
-          })) || [];
-
-        // Filtrer pour avoir Doodstream
-        const doodstreamPlayer = iframeSources.find(
-          (player: { name: string }) =>
-            player.name.toLowerCase().includes("doodstream")
-        );
-        const otherPlayers = iframeSources.filter(
-          (player: { name: string }) =>
-            !player.name.toLowerCase().includes("doodstream")
-        );
-
-        // Ajouter le lecteur ReactPlayer avec configuration optimisée pour mobile
-        const reactPlayerSource = dataStreaming.stream?.multi?.backup?.url
-          ? [
-              {
-                id: "react-player",
-                name: "Direct Player",
-                url: dataStreaming.stream.multi.backup.url,
-                isM3U8: true,
-              },
-            ]
-          : [];
-
-        const nsplSources = dataStreaming.nspl
-          ? [
-              {
-                id: "nspl-backup",
-                name: "nspl Backup",
-                url: dataStreaming.nspl.backup,
-              },
-            ]
-          : [];
-
-        const nsplMain = dataStreaming.nspl
-          ? [
-              {
-                id: "nspl-main",
-                name: "nspl Main",
-                url: dataStreaming.nspl.main,
-              },
-            ]
-          : [];
-
-        // Combiner les sources dans l'ordre souhaité
-        const validPlayers = [
-          ...nsplSources,
-          ...nsplMain,
-          ...(doodstreamPlayer ? [doodstreamPlayer] : []),
-          ...reactPlayerSource,
-          ...otherPlayers,
-        ].filter((player) => {
-          try {
-            new URL(player.url);
-            return true;
-          } catch {
-            return false;
-          }
-        });
-
-        if (!validPlayers.length) {
-          throw new Error("No valid source available");
-        }
-
-        // Sélectionner le premier lecteur compatible par défaut
-        const defaultPlayer = validPlayers[0];
-        setAvailablePlayers(validPlayers);
-        setStreamingUrl(defaultPlayer.url);
-        setSelectedPlayer(defaultPlayer.id);
-      } catch (error) {
-        if (error instanceof Error) {
-          if (error.name === "AbortError") return;
-          setError(
-            error.message.includes("Erreur serveur")
-              ? "Streaming server is temporarily unavailable"
-              : error.message
-          );
-        }
-        setStreamingUrl("");
-        setAvailablePlayers([]);
-        setSelectedPlayer("0");
-      } finally {
-        setIframeLoading(false);
-      }
-    },
-    [animeInfo?.id_provider?.idGogo]
-  );
 
   useEffect(() => {
     const controller = new AbortController();
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
         const animeId = window.location.pathname.split("/")[2];
-        const cacheKey = `anime_data_${animeId}`;
+        const cacheKey = `anilist_anime_${animeId}`;
         const cachedData = sessionStorage.getItem(cacheKey);
 
         if (cachedData) {
-          const { animeData, episodesData } = JSON.parse(cachedData);
+          const animeData = JSON.parse(cachedData);
           setAnimeInfo(animeData);
-          setEpisodeList(episodesData);
-          updateWatchHistory(animeId, animeData);
-
-          if (animeData.id_provider?.idGogo) {
-            localStorage.setItem("idGogo", animeData.id_provider.idGogo);
-            await fetchStreamingData("1", controller.signal);
-          } else {
-            localStorage.setItem("idGogo", "undefined");
-            setError("No source available for this anime");
-          }
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          if (animeData && Object.keys(animeData).length > 0) {
-            setLoading(false);
-          }
+          updateWatchHistory(animeId);
+          setLoading(false);
           return;
         }
 
         timeoutId = setTimeout(() => {
-          if (loading) {
-            controller.abort();
-            setError(
-              "Streaming server is taking too long to respond, please try again"
-            );
-            setLoading(false);
-          }
+          controller.abort();
+          setError("Le serveur met trop de temps à répondre");
+          setLoading(false);
         }, 20000);
 
-        const [animeResponse, episodesResponse] = await Promise.all([
-          fetch(`https://api.amvstr.me/api/v2/info/${animeId}`, {
-            signal: controller.signal,
-          }),
-          fetch(`https://api.amvstr.me/api/v2/episodes/${animeId}`, {
-            signal: controller.signal,
-          }),
-        ]);
+        const media = await fetchAnimeInfo(animeId, controller.signal);
 
-        if (!animeResponse.ok || !episodesResponse.ok) {
-          throw new Error("Error while retrieving data");
-        }
-
-        const [animeData, episodesData] = await Promise.all([
-          animeResponse.json(),
-          episodesResponse.json(),
-        ]);
-
-        if (!loading) return;
+        const animeData: Anime = {
+          id: media.id,
+          coverImage: {
+            large: media.coverImage?.large || media.coverImage?.extraLarge || "",
+            medium: media.coverImage?.medium || "",
+            color: media.coverImage?.color || "#900000",
+          },
+          bannerImage: media.bannerImage || "",
+          title: {
+            english: getMediaTitle(media.title),
+            romaji: media.title?.romaji || "",
+          },
+          status: media.status || "Unknown",
+          genres: media.genres || [],
+          score: {
+            averageScore: media.averageScore || 0,
+            decimalScore: media.averageScore ? media.averageScore / 10 : 0,
+          },
+          startIn: {
+            year: media.startDate?.year || media.seasonYear || 0,
+          },
+          nextair: media.nextAiringEpisode
+            ? { episode: String(media.nextAiringEpisode.episode) }
+            : null,
+          season: media.season || "",
+          episodes: media.episodes || 0,
+          description: media.description || "",
+          relation:
+            media.relations?.edges
+              ?.map((edge) => {
+                const node = edge?.node;
+                if (!node) return null;
+                return {
+                  id: String(node.id),
+                  type: node.type || "ANIME",
+                  format: node.format || "",
+                  status: node.status || "",
+                  averageScore: node.averageScore || 0,
+                  episodes: node.episodes || 0,
+                  coverImage: {
+                    large: node.coverImage?.large || "",
+                    color: node.coverImage?.color || "#900000",
+                  },
+                  title: {
+                    english: node.title?.english || node.title?.romaji || "",
+                    romaji: node.title?.romaji || "",
+                  },
+                };
+              })
+              .filter(Boolean) as RelationAnime[],
+        };
 
         setAnimeInfo(animeData);
-        updateWatchHistory(animeId, animeData);
-
-        if (animeData.id_provider?.idGogo) {
-          localStorage.setItem("idGogo", animeData.id_provider.idGogo);
-        } else {
-          localStorage.setItem("idGogo", "undefined");
-        }
-
-        if (episodesData.results) {
-          const episodeData = episodesData.results.map((episode: any) => ({
-            title: episode.title,
-            image: episode.image,
-            status: episode.status,
-            season: episode.season,
-            meanScore: episode.meanScore,
-            id: episode.id,
-            number: episode.number?.toString() || "1",
-          }));
-          setEpisodeList(episodeData);
-        }
-
-        sessionStorage.setItem(
-          cacheKey,
-          JSON.stringify({
-            animeData,
-            episodesData: episodesData.results,
-          })
-        );
-
-        await fetchStreamingData("1", controller.signal);
-
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        if (animeData && Object.keys(animeData).length > 0) {
-          setLoading(false);
-        }
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          if (error.name === "AbortError") {
-            return;
-          } else {
-            setError("An error occurred while loading");
-          }
-        }
-        console.error("Error fetching data:", error);
+        updateWatchHistory(animeId);
+        sessionStorage.setItem(cacheKey, JSON.stringify(animeData));
+        setLoading(false);
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === "AbortError") return;
+        console.error("Error fetching data:", err);
+        setError("Une erreur est survenue lors du chargement");
         setLoading(false);
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
@@ -436,60 +228,18 @@ const HeaderInfo = () => {
       if (timeoutId) clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [fetchStreamingData, updateWatchHistory]);
-
-  useEffect(() => {
-    const handleHashChange = () => {
-      const episodeHash = window.location.hash.match(/episode-(\d+)/);
-      const animeId = window.location.pathname.split("/")[2];
-
-      const watchedAnimes = JSON.parse(
-        localStorage.getItem("watchedAnimes") || "[]"
-      );
-      const watchedAnime = watchedAnimes.find(
-        (anime: { id: string }) => anime.id === animeId
-      );
-
-      let newEpisode = episodeHash
-        ? episodeHash[1]
-        : watchedAnime?.lastEpisode || "1";
-
-      const isValidEpisode = (episode: string): boolean => {
-        const episodeNum = parseInt(episode);
-
-        if (isNaN(episodeNum)) return false;
-
-        const maxEpisodes = animeInfo?.nextair?.episode
-          ? parseInt(animeInfo.nextair.episode) - 1
-          : animeInfo?.episodes
-            ? animeInfo.episodes
-            : episodeList?.length || 0;
-
-        return episodeNum > 0 && episodeNum <= maxEpisodes;
-      };
-
-      if (!isValidEpisode(newEpisode)) {
-        newEpisode = watchedAnime?.lastEpisode || "1";
-      }
-
-      if (!episodeHash) {
-        window.location.hash = `episode-${newEpisode}`;
-      }
-
-      setSelectedEpisode(newEpisode);
-      fetchStreamingData(newEpisode);
-    };
-
-    window.addEventListener("hashchange", handleHashChange);
-    handleHashChange();
-
-    return () => {
-      window.removeEventListener("hashchange", handleHashChange);
-    };
-  }, [animeInfo, episodeList]);
+  }, [updateWatchHistory]);
 
   if (loading || !animeInfo || Object.keys(animeInfo).length === 0) {
     return <HeaderInfoSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh] px-5">
+        <p className="text-lg text-slate-500">{error}</p>
+      </div>
+    );
   }
 
   return (
@@ -607,7 +357,7 @@ const HeaderInfo = () => {
                     {animeInfo?.nextair?.episode == null
                       ? animeInfo?.episodes
                       : animeInfo?.nextair?.episode}{" "}
-                    / {animeInfo?.episodes}
+                    / {animeInfo?.episodes || "?"}
                   </p>
                 </div>
               </div>
@@ -637,265 +387,28 @@ const HeaderInfo = () => {
           </div>
         </div>
       </div>
-      <div className="flex mt-5 ml-5 md:ml-8">
-        <Button
-          className="last_episode text-white bg-blue-500 mr-2"
-          variant="outline"
-          size="icon"
-          onClick={() => {
-            const lastEpisode = animeInfo?.nextair?.episode
-              ? (parseInt(animeInfo.nextair.episode) - 1).toString()
-              : animeInfo?.episodes
-                ? animeInfo.episodes.toString()
-                : episodeList.length > 0
-                  ? episodeList[episodeList.length - 1].number.toString()
-                  : "1";
 
-            const animeId = window.location.pathname.split("/")[2];
-            const watchedAnimes = JSON.parse(
-              localStorage.getItem("watchedAnimes") || "[]"
-            );
-            const animeIndex = watchedAnimes.findIndex(
-              (anime: { id: string }) => anime.id === animeId
-            );
-
-            if (animeIndex !== -1) {
-              const updatedAnime = {
-                ...watchedAnimes[animeIndex],
-                lastEpisode: lastEpisode,
-                timestamp: Date.now(),
-              };
-              watchedAnimes.splice(animeIndex, 1);
-              watchedAnimes.unshift(updatedAnime);
-
-              localStorage.setItem(
-                "watchedAnimes",
-                JSON.stringify(watchedAnimes)
-              );
-            }
-
-            setSelectedEpisode(lastEpisode);
-            fetchStreamingData(lastEpisode);
-            window.location.hash = `episode-${lastEpisode}`;
-          }}
-        >
-          <ArrowBigDownDash />
-        </Button>
-        <Select
-          value={selectedEpisode}
-          onValueChange={async (value) => {
-            setSelectedEpisode(value);
-            setIframeLoading(true);
-            await fetchStreamingData(value);
-
-            const animeId = window.location.pathname.split("/")[2];
-            const watchedAnimes = JSON.parse(
-              localStorage.getItem("watchedAnimes") || "[]"
-            );
-            const animeIndex = watchedAnimes.findIndex(
-              (anime: { id: string }) => anime.id === animeId
-            );
-
-            if (animeIndex !== -1) {
-              const updatedAnime = {
-                ...watchedAnimes[animeIndex],
-                lastEpisode: value,
-                timestamp: Date.now(),
-              };
-              watchedAnimes.splice(animeIndex, 1);
-              watchedAnimes.unshift(updatedAnime);
-
-              localStorage.setItem(
-                "watchedAnimes",
-                JSON.stringify(watchedAnimes)
-              );
-            }
-
-            window.location.hash = `episode-${value}`;
-          }}
-        >
-          <SelectTrigger className="w-[120px] md:w-[180px]">
-            <SelectValue placeholder={`Episode ${selectedEpisode}`} />
-          </SelectTrigger>
-          <SelectContent>
-            {animeInfo?.nextair?.episode
-              ? Array.from(
-                  { length: parseInt(animeInfo.nextair.episode) - 1 },
-                  (_, index) => (
-                    <SelectItem value={(index + 1).toString()} key={index}>
-                      Episode {index + 1}
-                    </SelectItem>
-                  )
-                )
-              : animeInfo?.episodes
-                ? Array.from({ length: animeInfo.episodes }, (_, index) => (
-                    <SelectItem value={(index + 1).toString()} key={index}>
-                      Episode {index + 1}
-                    </SelectItem>
-                  ))
-                : episodeList.map((anime, index) => (
-                    <SelectItem value={anime.number.toString()} key={index}>
-                      Episode {anime.number}
-                    </SelectItem>
-                  ))}
-          </SelectContent>
-        </Select>
-        <div className="ml-2">
-          <Select
-            value={selectedPlayer}
-            onValueChange={(value) => {
-              setSelectedPlayer(value);
-              setIframeLoading(true);
-              const selected = availablePlayers.find(
-                (player) => player.id === value
-              );
-              if (selected) {
-                const iframeUrl = new URL(selected.url);
-                iframeUrl.searchParams.set("pause", "1");
-                setStreamingUrl(iframeUrl.toString());
-                setTimeout(() => {
-                  setIframeLoading(false);
-                }, 2000);
-              }
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Lecteur" />
-            </SelectTrigger>
-            <SelectContent>
-              {availablePlayers.map((player) => (
-                <SelectItem key={player.id} value={player.id}>
-                  <span className="flex items-center justify-between w-full">
-                    <span>{player.name}</span>
-                    <span className="ml-2">
-                      {playerErrors[player.id] ? "❌" : "✅"}
-                    </span>
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Mobile description */}
+      <div className="md:hidden px-5 mt-4 mb-6">
+        <div className="flex items-center justify-center mb-3">
+          <StarRating rating={animeInfo?.score.decimalScore || 0} />
         </div>
+        <p
+          className="text-sm overflow-hidden text-slate-600 dark:text-slate-300"
+          style={{
+            display: "-webkit-box",
+            WebkitLineClamp: 8,
+            WebkitBoxOrient: "vertical",
+          }}
+          dangerouslySetInnerHTML={{
+            __html: animeInfo?.description || "",
+          }}
+        ></p>
       </div>
 
-      <div className="mt-6 aspect-video pb-5 px-5 md:px-8">
-        <div className="relative w-full h-full">
-          {iframeLoading && (
-            <div className="absolute inset-0 z-10 bg-background">
-              <Skeleton className="w-full h-full rounded-lg" />
-            </div>
-          )}
-          {error ? (
-            <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <div className="text-center">
-                <p className="text-lg text-gray-500 mb-2">{error}</p>
-                <Button
-                  className="bg-blue-500 text-white hover:bg-blue-600"
-                  onClick={() => {
-                    setError(null);
-                    fetchStreamingData(selectedEpisode);
-                  }}
-                >
-                  Try Again
-                </Button>
-              </div>
-            </div>
-          ) : selectedPlayer === "react-player" ? (
-            <div className="w-full h-full rounded-lg overflow-hidden">
-              <ReactPlayer
-                url={streamingUrl}
-                width="100%"
-                height="100%"
-                controls={true}
-                playing={false}
-                playsinline={true}
-                config={{
-                  file: {
-                    forceHLS: true,
-                    hlsOptions: {
-                      xhrSetup: function (xhr: XMLHttpRequest) {
-                        xhr.withCredentials = false;
-                      },
-                      enableWorker: true,
-                      autoStartLoad: true,
-                      startPosition: -1,
-                      debug: false,
-                    },
-                    attributes: {
-                      crossOrigin: "anonymous",
-                      playsInline: true,
-                      preload: "auto",
-                    },
-                  },
-                }}
-                onError={(e) => {
-                  console.error("ReactPlayer error:", e);
-                  setPlayerErrors((prev) => ({
-                    ...prev,
-                    "react-player": true,
-                  }));
-                  // Basculer vers un lecteur de secours si ReactPlayer échoue
-                  if (availablePlayers.length > 1) {
-                    const backupPlayer = availablePlayers.find(
-                      (p) => p.id !== "react-player" && !playerErrors[p.id]
-                    );
-                    if (backupPlayer) {
-                      setSelectedPlayer(backupPlayer.id);
-                      setStreamingUrl(backupPlayer.url.toString());
-                    }
-                  }
-                }}
-                onReady={() => {
-                  setPlayerErrors((prev) => ({
-                    ...prev,
-                    "react-player": false,
-                  }));
-                }}
-              />
-            </div>
-          ) : streamingUrl && localStorage.getItem("idGogo") !== "undefined" ? (
-            <div className="w-full h-full">
-              <iframe
-                key={`${streamingUrl}-${selectedPlayer}`}
-                src={streamingUrl}
-                className="w-full h-full rounded-lg"
-                allowFullScreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                referrerPolicy="no-referrer"
-                loading="lazy"
-                scrolling="no"
-                frameBorder="0"
-                security="restricted"
-                style={{ display: iframeLoading ? "none" : "block" }}
-                onLoad={() => {
-                  setTimeout(() => {
-                    setIframeLoading(false);
-                    setPlayerErrors((prev) => ({
-                      ...prev,
-                      [selectedPlayer]: false,
-                    }));
-                  }, 500);
-                }}
-                onError={() => {
-                  setPlayerErrors((prev) => ({
-                    ...prev,
-                    [selectedPlayer]: true,
-                  }));
-                }}
-              />
-            </div>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <Skeleton className="w-full h-full rounded-lg" />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Relations Section */}
       {animeInfo?.relation && animeInfo.relation.length > 0 && (
-        <div className="relations px-5 mb-5 md:px-8">
-          <Accordion type="single" collapsible>
+        <div className="relations px-5 mb-5 md:px-8 md:mt-8">
+          <Accordion type="single" collapsible defaultValue="related-anime">
             <AccordionItem value="related-anime">
               <AccordionTrigger>
                 <div className="flex flex-col items-start">
@@ -911,27 +424,6 @@ const HeaderInfo = () => {
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                {/* <div className="flex">
-                  <div className="hidden -mt-7 md:flex ml-auto gap-3 p-4 rounded-lg">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
-                      onClick={() => swiperRelationsRef.current?.slidePrev()}
-                    >
-                      <ChevronLeft className="h-4 w-4 text-gray-400 hover:text-blue-500" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="rounded-full border-gray-700 bg-transparent hover:bg-transparent hover:border-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all"
-                      onClick={() => swiperRelationsRef.current?.slideNext()}
-                    >
-                      <ChevronRight className="h-4 w-4 text-gray-400 focus:text-blue-500" />
-                    </Button>
-                  </div>
-                </div> */}
-
                 <Swiper
                   spaceBetween={20}
                   slidesPerView={2}
@@ -956,22 +448,19 @@ const HeaderInfo = () => {
                     .sort(
                       (a, b) => (b.averageScore || 0) - (a.averageScore || 0)
                     )
-                    .map((anime, index) => (
-                      <SwiperSlide key={index}>
+                    .map((anime) => (
+                      <SwiperSlide key={anime.id}>
                         <div
                           onClick={() => {
                             const currentPath = window.location.pathname;
                             const newPath = `/anime/${anime.id}`;
 
                             if (currentPath !== newPath) {
-                              // Nettoyer le sessionStorage pour forcer le rechargement des données
                               Object.keys(sessionStorage).forEach((key) => {
-                                if (key.startsWith("anime_data_")) {
+                                if (key.startsWith("anilist_anime_")) {
                                   sessionStorage.removeItem(key);
                                 }
                               });
-
-                              // Recharger la page avec le nouvel ID
                               window.location.href = newPath;
                             }
                           }}
@@ -990,7 +479,7 @@ const HeaderInfo = () => {
                                 )}
                               </div>
                               <div className="meanScoreBadge md:ml-auto lg:ml-6">
-                                {anime.averageScore && (
+                                {anime.averageScore ? (
                                   <Badge
                                     className="text-xs mr-0.5 mt-0.5 md:mr-1 cursor-default h-6 flex items-center"
                                     variant="secondary"
@@ -998,7 +487,7 @@ const HeaderInfo = () => {
                                     <Star className="h-4 w-4 mr-1" />
                                     {(anime.averageScore / 20).toFixed(1)}
                                   </Badge>
-                                )}
+                                ) : null}
                               </div>
                             </div>
                             <img

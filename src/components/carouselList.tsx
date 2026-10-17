@@ -34,32 +34,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-
-interface AnimeApiResponse {
-  coverImage: {
-    extraLarge: string;
-    large?: string;
-  };
-  title: {
-    english: string;
-    romaji?: string;
-  };
-  status: string;
-  genres: string[];
-  meanScore: number;
-  episodes: number;
-  id: string;
-  bannerImage?: string;
-  season?: string;
-  trailer?: {
-    thumbnail: string;
-    id: string;
-  };
-  nextAiringEpisode?: {
-    airingAt: number;
-    episode: number;
-  };
-}
+import {
+  fetchAnimeInfo,
+  fetchPopular,
+  fetchTrending,
+  getCoverUrl,
+  getMediaTitle,
+  toListAnime,
+} from "@/lib/anilist";
 
 interface Anime {
   score: any;
@@ -68,7 +50,7 @@ interface Anime {
   status: string;
   genres: string;
   meanScore: number;
-  episodes: number;
+  episodes: number | null;
   id: string;
   bannerImage?: string;
   season?: string;
@@ -213,7 +195,7 @@ const CarouselList = () => {
 
       if (watchedAnimes.length === 0) return [];
 
-      const cacheKey = `watched_animes_${watchedAnimes.map((a) => a.id).join("_")}`;
+      const cacheKey = `anilist_watched_${watchedAnimes.map((a) => a.id).join("_")}`;
       const cachedData = sessionStorage.getItem(cacheKey);
 
       if (cachedData) {
@@ -228,15 +210,11 @@ const CarouselList = () => {
       const watchedAnimesData = await Promise.all(
         watchedAnimes.map(async (anime) => {
           try {
-            const response = await fetch(
-              `https://api.amvstr.me/api/v2/info/${anime.id}`,
-              { signal: controller.signal }
-            );
-            if (!response.ok)
-              throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json();
+            const data = await fetchAnimeInfo(anime.id, controller.signal);
             return {
-              ...data,
+              ...toListAnime(data),
+              coverImage: getCoverUrl(data.coverImage),
+              title: getMediaTitle(data.title),
               lastEpisode: anime.lastEpisode,
               timestamp: anime.timestamp,
             };
@@ -272,7 +250,7 @@ const CarouselList = () => {
         trending: true,
         popular: true,
       }));
-      const cacheKey = "anime_lists_data";
+      const cacheKey = "anilist_lists_data";
       const cachedData = sessionStorage.getItem(cacheKey);
 
       if (cachedData) {
@@ -290,55 +268,15 @@ const CarouselList = () => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
 
-      const [response_trending, response_popular] = await Promise.all([
-        fetch("https://api.amvstr.me/api/v2/trending?limit=24", {
-          signal: controller.signal,
-        }),
-        fetch("https://api.amvstr.me/api/v2/popular?limit=24", {
-          signal: controller.signal,
-        }),
+      const [data_trending, data_popular] = await Promise.all([
+        fetchTrending(1, 24, controller.signal),
+        fetchPopular(1, 24, controller.signal),
       ]);
 
       clearTimeout(timeout);
 
-      if (!response_trending.ok || !response_popular.ok) {
-        throw new Error(
-          "Une erreur est survenue lors de la récupération des données"
-        );
-      }
-
-      const [data_trending, data_popular] = await Promise.all([
-        response_trending.json(),
-        response_popular.json(),
-      ]);
-
-      const trendingData = data_trending.results.map(
-        (anime: AnimeApiResponse) => ({
-          coverImage: anime.coverImage?.extraLarge,
-          title: anime.title?.english || anime.title?.romaji || "Unknown Title",
-          bannerImage: anime.bannerImage,
-          status: anime.status,
-          season: anime.season,
-          genres: anime.genres?.join(", ") || "",
-          meanScore: anime.meanScore,
-          id: anime.id,
-          episodes: anime.episodes,
-          trailer: anime.trailer,
-          nextAiringEpisode: anime.nextAiringEpisode,
-        })
-      );
-
-      const popularData = data_popular.results.map(
-        (anime: AnimeApiResponse) => ({
-          coverImage: anime.coverImage?.extraLarge,
-          title: anime.title?.english || anime.title?.romaji || "Unknown Title",
-          status: anime.status,
-          genres: anime.genres?.join(", ") || "",
-          meanScore: anime.meanScore,
-          id: anime.id,
-          episodes: anime.episodes,
-        })
-      );
+      const trendingData = data_trending.results.map(toListAnime);
+      const popularData = data_popular.results.map(toListAnime);
 
       setAnimeListTrending(trendingData);
       setAnimeListPopular(popularData);

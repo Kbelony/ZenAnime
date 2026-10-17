@@ -1,19 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
-import axios from "axios";
 import { Input } from "@/components/ui/input";
 import DOMPurify from "dompurify";
+import { fetchSearch, getMediaTitle } from "@/lib/anilist";
 
 interface AnimeResult {
   id: string;
   title: {
     english: string;
-    native: string;
+    romaji?: string;
   };
   coverImage: {
     large: string;
   };
-  image: string;
 }
 
 export default function SearchBar() {
@@ -25,19 +24,14 @@ export default function SearchBar() {
   const searchCache = useRef<Record<string, AnimeResult[]>>({});
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Fonction pour valider et nettoyer l'entrée
   const sanitizeInput = (input: string): string => {
-    // Supprime les caractères spéciaux et les scripts potentiels
     const sanitized = DOMPurify.sanitize(input, {
-      ALLOWED_TAGS: [], // Ne permet aucune balise HTML
-      ALLOWED_ATTR: [], // Ne permet aucun attribut
+      ALLOWED_TAGS: [],
+      ALLOWED_ATTR: [],
     });
-
-    // Limite aux caractères alphanumériques et quelques caractères spéciaux autorisés
     return sanitized.replace(/[^a-zA-Z0-9\s-]/g, "").trim();
   };
 
-  // Fonction pour valider la longueur de la recherche
   const isValidSearchTerm = (term: string): boolean => {
     return term.length >= 2 && term.length <= 50;
   };
@@ -65,12 +59,10 @@ export default function SearchBar() {
         return;
       }
 
-      // Annuler la requête précédente si elle existe
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
 
-      // Vérifier le cache
       const cacheKey = cleanedSearchTerm.toLowerCase();
       if (searchCache.current[cacheKey]) {
         setResults(searchCache.current[cacheKey]);
@@ -81,35 +73,34 @@ export default function SearchBar() {
       abortControllerRef.current = new AbortController();
 
       try {
-        const response = await axios.get(
-          `https://api.amvstr.me/api/v2/search?q=${encodeURIComponent(cleanedSearchTerm)}&limit=10`,
-          {
-            signal: abortControllerRef.current.signal,
-            headers: {
-              "Content-Type": "application/json",
-              "X-Requested-With": "XMLHttpRequest",
-            },
-          }
+        const data = await fetchSearch(
+          cleanedSearchTerm,
+          10,
+          abortControllerRef.current.signal
         );
 
-        // Validation de la réponse
-        if (!Array.isArray(response.data.results)) {
-          throw new Error("Format de réponse invalide");
-        }
-
-        const filteredResults = response.data.results
-          .filter((anime: AnimeResult) => anime.title.english)
+        const filteredResults: AnimeResult[] = data.results
+          .map((anime) => ({
+            id: String(anime.id),
+            title: {
+              english: getMediaTitle(anime.title),
+              romaji: anime.title?.romaji || undefined,
+            },
+            coverImage: {
+              large: anime.coverImage?.large || anime.coverImage?.extraLarge || "",
+            },
+          }))
+          .filter((anime) => anime.title.english && anime.coverImage.large)
           .slice(0, 10);
 
-        searchCache.current[cacheKey] = filteredResults;
         setResults(filteredResults);
+        searchCache.current[cacheKey] = filteredResults;
       } catch (error) {
-        if (axios.isCancel(error)) {
-          console.log("Requête annulée");
-        } else {
-          console.error("Error during search:", error);
-          setResults([]);
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
         }
+        console.error("Error during search:", error);
+        setResults([]);
       } finally {
         setIsLoading(false);
       }
@@ -133,13 +124,11 @@ export default function SearchBar() {
           onChange={(e) => {
             const value = e.target.value;
             if (value.length <= 50) {
-              // Limite la longueur maximale
               setSearchTerm(value);
               setIsOpen(true);
             }
           }}
           onKeyDown={(e) => {
-            // Bloquer certaines touches potentiellement dangereuses
             if (
               e.key === "<" ||
               e.key === ">" ||
