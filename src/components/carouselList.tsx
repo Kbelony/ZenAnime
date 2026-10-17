@@ -44,7 +44,7 @@ import {
 } from "@/lib/anilist";
 
 interface Anime {
-  score: any;
+  score?: any;
   coverImage: string | { large?: string; extraLarge?: string };
   title: string | { english: string; romaji: string };
   status: string;
@@ -227,7 +227,9 @@ const CarouselList = () => {
 
       clearTimeout(timeout);
 
-      const filteredData = watchedAnimesData.filter(Boolean);
+      const filteredData = watchedAnimesData.filter(
+        (anime) => anime !== null
+      ) as Anime[];
       setWatchedAnimeList(filteredData);
       sessionStorage.setItem(cacheKey, JSON.stringify(filteredData));
       return filteredData;
