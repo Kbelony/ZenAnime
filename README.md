@@ -1,30 +1,57 @@
-# React + TypeScript + Vite
+# ZenAnime 📺
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> A modern anime discovery web app powered by the AniList GraphQL API.
 
-Currently, two official plugins are available:
+**Live demo:** [zenanime-topaz.vercel.app](https://zenanime-topaz.vercel.app)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## About
 
-## Expanding the ESLint configuration
+ZenAnime lets you browse, search and explore over 4,000 anime series and movies through a fast, clean, ad-free interface. All data (titles, covers, scores, episodes, trailers) is fetched live from the [AniList API](https://anilist.gitbook.io/anilist-apiv2-docs/) via GraphQL. Built as a front-end project to practice a production-style React + TypeScript setup.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## Features
 
-- Configure the top-level `parserOptions` property like this:
+- **Trending & Popular lists** — carousels and full pages of what's hot right now, with scores, status badges and episode counts
+- **Anime detail pages** — synopsis, genres, season, rating, episode progress and related anime (other seasons, spin-offs)
+- **Instant search** — live search dropdown with in-memory caching, request cancellation (AbortController) and input sanitization (DOMPurify)
+- **Dark / light mode** — theme toggle persisted across sessions
+- **Polished UX** — skeleton loaders while data loads, responsive layout from mobile to ultra-wide
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
+## Screenshots
+
+| Home | Trending |
+| --- | --- |
+| ![ZenAnime home](docs/screenshots/home.png) | ![Trending page](docs/screenshots/trending.png) |
+
+| Anime details | Live search |
+| --- | --- |
+| ![Anime detail page](docs/screenshots/detail.png) | ![Search dropdown](docs/screenshots/search.png) |
+
+## Tech Stack
+
+- **React 18 + TypeScript + Vite** (SWC)
+- **TanStack Router** — file-based, type-safe routing
+- **Tailwind CSS + shadcn/ui (Radix UI)** — design system components
+- **Axios** — GraphQL queries against the AniList API
+- **Swiper, react-player, lucide-react**
+- **Vercel Analytics & Speed Insights**
+
+## Getting Started
+
+```bash
+git clone https://github.com/Kbelony/ZenAnime.git
+cd ZenAnime
+npm install
+npm run dev
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+Then open http://localhost:5173. No API key needed — the AniList public API is free.
+
+## Project Structure
+
+```
+src/
+├── components/    # UI components (hero, carousels, search bar, shadcn/ui)
+├── lib/anilist.ts # AniList GraphQL queries & types
+├── routes/        # TanStack Router file-based routes
+└── assets/        # fonts, images, global styles (SCSS)
+```
